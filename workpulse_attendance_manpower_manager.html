@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkPulse - Manager & Attendance Ecosystem</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Font Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            whatsapp: '#25D366'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars & smooth transitions */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .custom-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    }
+    .mobile-frame {
+      max-width: 420px;
+      margin: 0 auto;
+      border: 12px solid #1e293b;
+      border-radius: 40px;
+      min-height: 850px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+    .mobile-notch {
+      width: 140px;
+      height: 22px;
+      background-color: #1e293b;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-bottom-left-radius: 14px;
+      border-bottom-right-radius: 14px;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Device Frame Wrapper for Responsive & Simulation Toggle -->
+  <div id="app-wrapper" class="min-h-screen flex flex-col transition-all duration-300">
+    
+    <!-- Top Utility Bar (View Switcher & Role Switcher Banner) -->
+    <header class="bg-slate-900 text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3 shadow z-40">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+          <i class="fa-solid fa-layer-group mr-1.5"></i> WorkPulse Multi-Role Suite
+        </span>
+        <span class="text-slate-400 hidden sm:inline">| Attendance, Manpower & Self-Service</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- View Toggle (Desktop vs Mobile simulator) -->
+        <button id="device-toggle-btn" onclick="toggleDeviceMode()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-mobile-screen-button text-indigo-400"></i>
+          <span id="device-toggle-text">Mobile View</span>
+        </button>
+
+        <!-- Quick Switch Demo Role Dropdown -->
+        <div class="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded border border-slate-700">
+          <span class="text-slate-400">Acting As:</span>
+          <select id="quick-role-select" onchange="quickSwitchRole(this.value)" class="bg-transparent text-indigo-300 font-semibold focus:outline-none cursor-pointer">
+            <option value="manager" class="bg-slate-900 text-white">Manager (Rahul Roy)</option>
+            <option value="employee" class="bg-slate-900 text-white">Employee (Priya Sharma)</option>
+            <option value="admin" class="bg-slate-900 text-white">Admin (Vikram Malhotra)</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Screen Container (Switches between Login & Authenticated App) -->
+    <div id="screen-container" class="flex-1 flex flex-col transition-all duration-300"></div>
+
+  </div>
+
+
+  <!-- WhatsApp Quick Sender Modal -->
+  <div id="whatsapp-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
+      <div class="bg-[#075e54] text-white px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white text-lg">
+            <i class="fa-brands fa-whatsapp"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm leading-tight">WhatsApp Team Dispatcher</h3>
+            <p class="text-xs text-emerald-200">Broadcast & Manpower Alerts</p>
+          </div>
+        </div>
+        <button onclick="closeWhatsAppModal()" class="text-white/80 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Target Manpower Contact</label>
+          <div class="relative">
+            <i class="fa-solid fa-phone absolute left-3 top-3 text-slate-400 text-xs"></i>
+            <input type="tel" id="wa-phone" value="+919876543210" placeholder="+91..." class="w-full pl-8 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Quick Templates</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="setWaTemplate('punch')" class="p-2 border rounded-lg hover:bg-slate-50 text-left border-slate-200 text-slate-700">
+              ⏰ Punch-In Reminder
+            </button>
+            <button onclick="setWaTemplate('leave')" class="p-2 border rounded-lg hover:bg-slate-50 text-left border-slate-200 text-slate-700">
+              ✅ Leave Approved
+            </button>
+            <button onclick="setWaTemplate('holiday')" class="p-2 border rounded-lg hover:bg-slate-50 text-left border-slate-200 text-slate-700">
+              🎉 Holiday Alert
+            </button>
+            <button onclick="setWaTemplate('meeting')" class="p-2 border rounded-lg hover:bg-slate-50 text-left border-slate-200 text-slate-700">
+              👥 Manpower Briefing
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Message Content</label>
+          <textarea id="wa-message" rows="4" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs text-slate-700 resize-none">Hello Priya, friendly reminder to log your daily attendance punch on the WorkPulse portal before 10:00 AM.</textarea>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="sendDirectWhatsApp()" class="flex-1 bg-[#25D366] hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md">
+            <i class="fa-brands fa-whatsapp text-sm"></i> Launch WhatsApp Chat
+          </button>
+          <button onclick="sendSimulatedTeamChat()" class="px-4 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition text-xs">
+            In-App Ping
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Floating Team Chat Drawer -->
+  <div id="chat-drawer" class="fixed bottom-20 right-5 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 hidden flex flex-col overflow-hidden transition-all duration-300">
+    <div class="bg-indigo-600 text-white p-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
+        <span class="font-semibold text-sm">Manpower Broadcast Chat</span>
+      </div>
+      <button onclick="toggleChatDrawer()" class="text-white hover:text-slate-200">
+        <i class="fa-solid fa-minus"></i>
+      </button>
+    </div>
+    
+    <div id="chat-messages" class="h-64 overflow-y-auto p-3 space-y-3 bg-slate-50 text-xs">
+      <!-- Dynamic Messages will render here -->
+    </div>
+
+    <form onsubmit="handleSendChatMessage(event)" class="p-2.5 bg-white border-t flex gap-2">
+      <input type="text" id="chat-input" placeholder="Type a message to team..." class="flex-1 bg-slate-100 px-3 py-2 rounded-xl text-xs outline-none focus:ring-1 focus:ring-indigo-500" required>
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // System Data Store with Local Storage Persistence Support
+    const AppState = {
+      isMobileFrame: false,
+      isLoggedIn: true,
+      currentUser: {
+        id: 'EMP-1002',
+        name: 'Rahul Roy',
+        role: 'manager', // 'admin', 'manager', 'employee'
+        email: 'rahul.roy@workpulse.io',
+        phone: '+91 98200 12345',
+        department: 'Operations & Engineering',
+        designation: 'Senior Operations Manager',
+        joiningDate: '12-Mar-2022',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+        shift: '09:30 AM - 06:30 PM'
+      },
+      currentTab: 'dashboard', // dashboard, menu, manpower, profile, notifications
+      activeMenuTab: 'leave', // leave, complaint, request_change
+      todayPunch: {
+        punchedIn: true,
+        punchInTime: '09:14 AM',
+        punchOutTime: null,
+        durationSeconds: 14820, // ~4 hours 7 mins
+        isTimerRunning: true
+      },
+      // Manpower Employees Database
+      employees: [
+        {
+          id: 'EMP-1001',
+          name: 'Vikram Malhotra',
+          role: 'admin',
+          designation: 'VP of Human Capital',
+          department: 'Executive',
+          phone: '+91 98111 22334',
+          whatsapp: '919811122334',
+          status: 'Present',
+          punchIn: '08:50 AM',
+          punchOut: null,
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          id: 'EMP-1002',
+          name: 'Rahul Roy',
+          role: 'manager',
+          designation: 'Senior Operations Manager',
+          department: 'Operations',
+          phone: '+91 98200 12345',
+          whatsapp: '919820012345',
+          status: 'Present',
+          punchIn: '09:14 AM',
+          punchOut: null,
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          id: 'EMP-1003',
+          name: 'Priya Sharma',
+          role: 'employee',
+          designation: 'UI/UX Product Designer',
+          department: 'Product Design',
+          phone: '+91 97333 44556',
+          whatsapp: '919733344556',
+          status: 'Present',
+          punchIn: '09:28 AM',
+          punchOut: null,
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          id: 'EMP-1004',
+          name: 'Amit Verma',
+          role: 'employee',
+          designation: 'Frontend Developer',
+          department: 'Engineering',
+          phone: '+91 98999 55667',
+          whatsapp: '919899955667',
+          status: 'On Leave',
+          punchIn: '-',
+          punchOut: '-',
+          avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          id: 'EMP-1005',
+          name: 'Sneha Patel',
+          role: 'employee',
+          designation: 'Quality Assurance Lead',
+          department: 'Engineering',
+          phone: '+91 98777 66778',
+          whatsapp: '919877766778',
+          status: 'Late',
+          punchIn: '10:12 AM',
+          punchOut: null,
+          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80'
+        },
+        {
+          id: 'EMP-1006',
+          name: 'Karan Mehra',
+          role: 'employee',
+          designation: 'DevOps Specialist',
+          department: 'Infrastructure',
+          phone: '+91 98666 77889',
+          whatsapp: '919866677889',
+          status: 'Checked Out',
+          punchIn: '08:45 AM',
+          punchOut: '05:30 PM',
+          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80'
+        }
+      ],
+      // Leave Requests
+      leaveRequests: [
+        {
+          id: 'LV-401',
+          empId: 'EMP-1003',
+          empName: 'Priya Sharma',
+          type: 'Casual Leave',
+          startDate: '2026-09-24',
+          endDate: '2026-09-25',
+          days: 2,
+          reason: 'Attending family wedding ceremony out of town.',
+          status: 'Pending',
+          appliedOn: '2026-09-18'
+        },
+        {
+          id: 'LV-402',
+          empId: 'EMP-1004',
+          empName: 'Amit Verma',
+          type: 'Sick Leave',
+          startDate: '2026-09-20',
+          endDate: '2026-09-21',
+          days: 2,
+          reason: 'Viral fever and prescribed medical rest.',
+          status: 'Approved',
+          appliedOn: '2026-09-19'
+        }
+      ],
+      // Complaints / Grievances
+      complaints: [
+        {
+          id: 'CMP-801',
+          empName: 'Priya Sharma',
+          category: 'Workplace Ergonomics',
+          subject: 'Broken lumbar support in Floor 2 workstation',
+          details: 'The adjustable back support is fractured, causing posture strain.',
+          isAnonymous: false,
+          status: 'Under Review',
+          submittedDate: '2026-09-16'
+        },
+        {
+          id: 'CMP-802',
+          empName: 'Anonymous Staff',
+          category: 'Cafeteria & Amenities',
+          subject: 'Pantry coffee machine temperature issue',
+          details: 'Coffee dispenser is dispensing lukewarm water for 3 days.',
+          isAnonymous: true,
+          status: 'Resolved',
+          submittedDate: '2026-09-12'
+        }
+      ],
+      // Punch Corrections / Request Change
+      punchRequests: [
+        {
+          id: 'PR-101',
+          empName: 'Sneha Patel',
+          date: '2026-09-18',
+          missingType: 'Out-Time Missing',
+          requestedTime: '06:45 PM',
+          reason: 'Biometric fingerprint reader was undergoing reboot.',
+          status: 'Pending'
+        }
+      ],
+      // Upcoming Holidays List
+      holidays: [
+        { name: 'Gandhi Jayanti', date: '02 Oct 2026', day: 'Friday', badge: 'National' },
+        { name: 'Dussehra / Vijayadashami', date: '20 Oct 2026', day: 'Tuesday', badge: 'Festival' },
+        { name: 'Diwali (Deepavali)', date: '08 Nov 2026', day: 'Sunday', badge: 'Public' },
+        { name: 'Guru Nanak Jayanti', date: '24 Nov 2026', day: 'Tuesday', badge: 'Gazetted' },
+        { name: 'Christmas Day', date: '25 Dec 2026', day: 'Friday', badge: 'Holiday' }
+      ],
+      // Notifications List
+      notifications: [
+        { id: 1, title: 'Holiday Ahead', desc: 'Gandhi Jayanti is observed on Oct 2nd.', time: '2h ago', icon: 'fa-calendar-day', read: false },
+        { id: 2, title: 'Leave Application', desc: 'Priya Sharma submitted a 2-day Casual Leave request.', time: '4h ago', icon: 'fa-envelope-open-text', read: false },
+        { id: 3, title: 'Punch Regularized', desc: 'Your punch request for Sep 15 has been approved.', time: '1d ago', icon: 'fa-circle-check', read: true }
+      ],
+      // Team Broadcast Chat
+      chatMessages: [
+        { sender: 'Vikram (VP)', text: 'Good morning all! Please ensure sprint retrospective tasks are updated.', time: '09:05 AM', self: false },
+        { sender: 'Rahul Roy', text: 'Noted Vikram. Morning standup will commence at 10:00 AM.', time: '09:12 AM', self: true }
+      ]
+    };
+
+    // Live Punch Timer
+    let punchTimerInterval = null;
+    function startPunchTimer() {
+      if (punchTimerInterval) clearInterval(punchTimerInterval);
+      punchTimerInterval = setInterval(() => {
+        if (AppState.todayPunch.punchedIn && AppState.todayPunch.isTimerRunning) {
+          AppState.todayPunch.durationSeconds++;
+          const durationEl = document.getElementById('live-duration-counter');
+          if (durationEl) {
+            durationEl.innerText = formatDuration(AppState.todayPunch.durationSeconds);
+          }
+        }
+      }, 1000);
+    }
+    startPunchTimer();
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+    }
+
+    function showToast(title, message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const icons = {
+        success: 'fa-circle-check text-emerald-500',
+        info: 'fa-circle-info text-indigo-500',
+        warning: 'fa-triangle-exclamation text-amber-500',
+        error: 'fa-circle-exclamation text-rose-500'
+      };
+      
+      toast.className = 'pointer-events-auto flex items-start gap-3 bg-white p-3.5 rounded-xl shadow-lg border border-slate-100 max-w-sm transition-all duration-300 transform translate-y-2 opacity-0';
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-lg mt-0.5"></i>
+        <div class="flex-1 text-xs">
+          <p class="font-bold text-slate-800">${title}</p>
+          <p class="text-slate-600 mt-0.5">${message}</p>
+        </div>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function toggleDeviceMode() {
+      AppState.isMobileFrame = !AppState.isMobileFrame;
+      const btnText = document.getElementById('device-toggle-text');
+      const wrapper = document.getElementById('screen-container');
+      
+      if (AppState.isMobileFrame) {
+        btnText.innerText = "Desktop View";
+        showToast("View Switched", "Switched to mobile smartphone viewport simulator.", "info");
+      } else {
+        btnText.innerText = "Mobile View";
+        showToast("View Switched", "Switched to standard full-screen enterprise layout.", "info");
+      }
+      renderApp();
+    }
+
+    function quickSwitchRole(role) {
+      if (role === 'manager') {
+        AppState.currentUser = {
+          id: 'EMP-1002',
+          name: 'Rahul Roy',
+          role: 'manager',
+          email: 'rahul.roy@workpulse.io',
+          phone: '+91 98200 12345',
+          department: 'Operations & Engineering',
+          designation: 'Senior Operations Manager',
+          joiningDate: '12-Mar-2022',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+          shift: '09:30 AM - 06:30 PM'
+        };
+      } else if (role === 'admin') {
+        AppState.currentUser = {
+          id: 'EMP-1001',
+          name: 'Vikram Malhotra',
+          role: 'admin',
+          email: 'vikram.m@workpulse.io',
+          phone: '+91 98111 22334',
+          department: 'Executive HR & Admin',
+          designation: 'VP of Human Capital',
+          joiningDate: '01-Jan-2020',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+          shift: '09:00 AM - 06:00 PM'
+        };
+      } else {
+        AppState.currentUser = {
+          id: 'EMP-1003',
+          name: 'Priya Sharma',
+          role: 'employee',
+          email: 'priya.s@workpulse.io',
+          phone: '+91 97333 44556',
+          department: 'Product Design',
+          designation: 'UI/UX Product Designer',
+          joiningDate: '15-Aug-2023',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+          shift: '09:30 AM - 06:30 PM'
+        };
+      }
+      showToast("Identity Switched", `Now viewing as ${AppState.currentUser.name} (${AppState.currentUser.role.toUpperCase()})`, "success");
+      renderApp();
+    }
+
+    function switchTab(tabName) {
+      AppState.currentTab = tabName;
+      renderApp();
+    }
+
+    function switchMenuSubTab(subTab) {
+      AppState.activeMenuTab = subTab;
+      renderApp();
+    }
+
+    function logoutUser() {
+      AppState.isLoggedIn = false;
+      renderApp();
+      showToast("Logged Out", "You have safely ended your session.", "info");
+    }
+
+    function loginDemo(role) {
+      AppState.isLoggedIn = true;
+      document.getElementById('quick-role-select').value = role;
+      quickSwitchRole(role);
+      showToast("Welcome Back", "Authentication verified successfully.", "success");
+    }
+
+    // Attendance Punch Action
+    function toggleAttendancePunch() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      if (!AppState.todayPunch.punchedIn) {
+        AppState.todayPunch.punchedIn = true;
+        AppState.todayPunch.punchInTime = timeStr;
+        AppState.todayPunch.punchOutTime = null;
+        AppState.todayPunch.isTimerRunning = true;
+        showToast("Punched In Successfully", `Marked present at ${timeStr}. Live session active.`, "success");
+      } else {
+        AppState.todayPunch.punchedIn = false;
+        AppState.todayPunch.punchOutTime = timeStr;
+        AppState.todayPunch.isTimerRunning = false;
+        showToast("Punched Out Successfully", `Marked exit at ${timeStr}. Total time logged.`, "warning");
+      }
+      renderApp();
+    }
+  </script>
+
+  <script>
+    // Core Render Router
+    function renderApp() {
+      const container = document.getElementById('screen-container');
+      
+      if (!AppState.isLoggedIn) {
+        container.innerHTML = getLoginScreenHtml();
+        return;
+      }
+
+      const innerContent = `
+        <div class="flex flex-col md:flex-row h-full min-h-[calc(100vh-42px)] bg-slate-50">
+          <!-- Desktop Sidebar / Navigation -->
+          ${getDesktopSidebarHtml()}
+
+          <!-- Center Content Area -->
+          <div class="flex-1 flex flex-col h-full overflow-y-auto">
+            <!-- App Top Navbar -->
+            ${getAppHeaderHtml()}
+
+            <!-- Main Dynamic Viewport -->
+            <main class="flex-1 p-3 sm:p-6 pb-24 md:pb-6 space-y-6">
+              ${getCurrentTabHtml()}
+            </main>
+          </div>
+        </div>
+
+        <!-- Mobile Floating Bottom App Bar -->
+        ${getMobileBottomBarHtml()}
+
+        <!-- Floating Quick Action Buttons (WhatsApp & Live Chat) -->
+        <div class="fixed bottom-20 md:bottom-6 right-5 flex flex-col gap-2.5 z-40">
+          <button onclick="openWhatsAppModal()" title="WhatsApp Dispatcher" class="w-12 h-12 bg-[#25D366] text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-xl">
+            <i class="fa-brands fa-whatsapp"></i>
+          </button>
+          <button onclick="toggleChatDrawer()" title="Team Broadcast" class="w-12 h-12 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-xl">
+            <i class="fa-solid fa-comments"></i>
+          </button>
+        </div>
+      `;
+
+      if (AppState.isMobileFrame) {
+        container.innerHTML = `
+          <div class="py-6 px-2 flex justify-center items-center flex-1 bg-slate-200">
+            <div class="mobile-frame bg-slate-50 w-full flex flex-col">
+              <div class="mobile-notch"></div>
+              <div class="pt-6 h-full flex-1 flex flex-col overflow-y-auto relative">
+                ${innerContent}
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = innerContent;
+      }
+
+      // Re-populate live duration after rerender
+      const durationEl = document.getElementById('live-duration-counter');
+      if (durationEl) {
+        durationEl.innerText = formatDuration(AppState.todayPunch.durationSeconds);
+      }
+    }
+
+    // 1. Authentication Screen Component
+    function getLoginScreenHtml() {
+      return `
+        <div class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100">
+          <div class="max-w-md w-full bg-white text-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-100 space-y-6">
+            <div class="text-center space-y-2">
+              <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-lg shadow-indigo-500/30 text-2xl">
+                <i class="fa-solid fa-fingerprint"></i>
+              </div>
+              <h1 class="text-2xl font-bold text-slate-900 tracking-tight">WorkPulse Portal</h1>
+              <p class="text-xs text-slate-500">Manager Attendance & Manpower Intelligence Platform</p>
+            </div>
+
+            <!-- Demo Quick Login Badges -->
+            <div class="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-100">
+              <p class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider mb-2">⚡ Quick 1-Click Demo Login:</p>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <button onclick="loginDemo('manager')" class="py-2 px-1 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 rounded-xl font-medium text-slate-700 transition shadow-sm text-center">
+                  <span class="block font-bold">Manager</span>
+                  <span class="text-[10px] text-slate-400 block hover:text-indigo-100">Rahul Roy</span>
+                </button>
+                <button onclick="loginDemo('admin')" class="py-2 px-1 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 rounded-xl font-medium text-slate-700 transition shadow-sm text-center">
+                  <span class="block font-bold">Admin</span>
+                  <span class="text-[10px] text-slate-400 block hover:text-indigo-100">Vikram M.</span>
+                </button>
+                <button onclick="loginDemo('employee')" class="py-2 px-1 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 rounded-xl font-medium text-slate-700 transition shadow-sm text-center">
+                  <span class="block font-bold">Employee</span>
+                  <span class="text-[10px] text-slate-400 block hover:text-indigo-100">Priya S.</span>
+                </button>
+              </div>
+            </div>
+
+            <form onsubmit="handleManualLogin(event)" class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Corporate Email / Employee ID</label>
+                <div class="relative">
+                  <i class="fa-solid fa-id-badge absolute left-3 top-3 text-slate-400 text-sm"></i>
+                  <input type="text" id="login-username" value="manager@workpulse.io" required class="w-full pl-9 pr-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                <div class="relative">
+                  <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400 text-sm"></i>
+                  <input type="password" id="login-password" value="••••••••" required class="w-full pl-9 pr-3 py-2 text-xs border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                  <span>Keep me signed in</span>
+                </label>
+                <a href="javascript:void(0)" onclick="showToast('Password Reset', 'Password recovery link dispatched to administrator.', 'info')" class="text-indigo-600 hover:underline">Forgot?</a>
+              </div>
+
+              <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-xs shadow-md shadow-indigo-600/20">
+                Sign In to Dashboard
+              </button>
+            </form>
+
+            <div class="pt-2 text-center border-t border-slate-100">
+              <p class="text-[11px] text-slate-400">
+                Encrypted enterprise authentication &bull; WorkPulse v3.4
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleManualLogin(e) {
+      e.preventDefault();
+      loginDemo('manager');
+    }
+  </script>
+
+  <script>
+    function getDesktopSidebarHtml() {
+      const isManagerOrAdmin = AppState.currentUser.role === 'manager' || AppState.currentUser.role === 'admin';
+      return `
+        <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-4 shadow-sm">
+          <div class="space-y-6">
+            <!-- Brand -->
+            <div class="flex items-center gap-3 px-2">
+              <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/30">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div>
+                <h2 class="font-extrabold text-slate-900 text-base tracking-tight leading-tight">WorkPulse</h2>
+                <p class="text-[11px] text-indigo-600 font-semibold uppercase tracking-wider">Attendance OS</p>
+              </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1 text-xs font-semibold">
+              <button onclick="switchTab('dashboard')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${AppState.currentTab === 'dashboard' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+                <span>Attendance Hub</span>
+              </button>
+
+              <button onclick="switchTab('menu')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${AppState.currentTab === 'menu' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                <i class="fa-solid fa-paper-plane w-4 text-center"></i>
+                <span>Requests & Services</span>
+              </button>
+
+              ${isManagerOrAdmin ? `
+              <button onclick="switchTab('manpower')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${AppState.currentTab === 'manpower' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                <i class="fa-solid fa-users-gear w-4 text-center"></i>
+                <div class="flex-1 flex items-center justify-between">
+                  <span>Manpower Roster</span>
+                  <span class="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full">${AppState.employees.length}</span>
+                </div>
+              </button>
+              ` : ''}
+
+              <button onclick="switchTab('notifications')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${AppState.currentTab === 'notifications' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                <i class="fa-solid fa-bell w-4 text-center"></i>
+                <div class="flex-1 flex items-center justify-between">
+                  <span>Notifications</span>
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                </div>
+              </button>
+
+              <button onclick="switchTab('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${AppState.currentTab === 'profile' ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                <i class="fa-solid fa-id-card w-4 text-center"></i>
+                <span>Personal Profile</span>
+              </button>
+            </nav>
+          </div>
+
+          <!-- Bottom User Pill & Logout -->
+          <div class="pt-4 border-t border-slate-100 space-y-2">
+            <div class="flex items-center gap-2.5 p-2 bg-slate-50 rounded-xl border border-slate-100">
+              <img src="${AppState.currentUser.avatar}" class="w-9 h-9 rounded-full object-cover border border-indigo-200" alt="Avatar">
+              <div class="overflow-hidden">
+                <p class="text-xs font-bold text-slate-800 truncate">${AppState.currentUser.name}</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-wide font-medium">${AppState.currentUser.role}</p>
+              </div>
+            </div>
+            <button onclick="logoutUser()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              <span>Log Out</span>
+            </button>
+          </div>
+        </aside>
+      `;
+    }
+
+    function getAppHeaderHtml() {
+      return `
+        <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+          <div class="flex items-center gap-2">
+            <div class="md:hidden w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+              <h1 class="text-sm sm:text-base font-bold text-slate-900 capitalize">
+                ${AppState.currentTab === 'dashboard' ? 'Attendance & Time Dashboard' : ''}
+                ${AppState.currentTab === 'menu' ? 'Services: Leaves, Grievances & Punches' : ''}
+                ${AppState.currentTab === 'manpower' ? 'Manpower Control & Staff Onboarding' : ''}
+                ${AppState.currentTab === 'notifications' ? 'Company Alerts & Action Center' : ''}
+                ${AppState.currentTab === 'profile' ? 'Staff Profile & Security Hub' : ''}
+              </h1>
+              <p class="text-[10px] sm:text-xs text-slate-500">Employee ID: <span class="font-mono font-bold text-indigo-600">${AppState.currentUser.id}</span> &bull; Shift: ${AppState.currentUser.shift}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Fast WhatsApp Button -->
+            <button onclick="openWhatsAppModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 transition">
+              <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+              <span class="hidden sm:inline">WhatsApp Dispatch</span>
+            </button>
+
+            <!-- Notification Bell Icon Button -->
+            <button onclick="switchTab('notifications')" class="relative p-2 text-slate-600 hover:text-indigo-600 rounded-xl hover:bg-slate-100 transition">
+              <i class="fa-regular fa-bell text-base"></i>
+              <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+            </button>
+
+            <!-- Avatar badge -->
+            <img src="${AppState.currentUser.avatar}" onclick="switchTab('profile')" class="w-8 h-8 rounded-full object-cover border border-slate-300 cursor-pointer" alt="User">
+          </div>
+        </header>
+      `;
+    }
+
+    function getMobileBottomBarHtml() {
+      const isManagerOrAdmin = AppState.currentUser.role === 'manager' || AppState.currentUser.role === 'admin';
+      return `
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-center justify-around py-2 px-1 z-30 shadow-lg">
+          <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-1 text-[10px] ${AppState.currentTab === 'dashboard' ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+            <i class="fa-solid fa-clock text-base"></i>
+            <span>Clock</span>
+          </button>
+          <button onclick="switchTab('menu')" class="flex flex-col items-center gap-1 text-[10px] ${AppState.currentTab === 'menu' ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+            <i class="fa-solid fa-list-check text-base"></i>
+            <span>Services</span>
+          </button>
+          ${isManagerOrAdmin ? `
+          <button onclick="switchTab('manpower')" class="flex flex-col items-center gap-1 text-[10px] ${AppState.currentTab === 'manpower' ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+            <i class="fa-solid fa-users text-base"></i>
+            <span>Staff</span>
+          </button>
+          ` : ''}
+          <button onclick="switchTab('notifications')" class="flex flex-col items-center gap-1 text-[10px] ${AppState.currentTab === 'notifications' ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+            <i class="fa-solid fa-bell text-base"></i>
+            <span>Alerts</span>
+          </button>
+          <button onclick="switchTab('profile')" class="flex flex-col items-center gap-1 text-[10px] ${AppState.currentTab === 'profile' ? 'text-indigo-600 font-bold' : 'text-slate-500'}">
+            <i class="fa-solid fa-circle-user text-base"></i>
+            <span>Profile</span>
+          </button>
+        </nav>
+      `;
+    }
+
+    function getCurrentTabHtml() {
+      switch (AppState.currentTab) {
+        case 'dashboard':
+          return getDashboardHtml();
+        case 'menu':
+          return getMenuSectionHtml();
+        case 'manpower':
+          return getManpowerManagerHtml();
+        case 'notifications':
+          return getNotificationsViewHtml();
+        case 'profile':
+          return getProfileSecurityHtml();
+        default:
+          return getDashboardHtml();
+      }
+    }
+  </script>
+
+  <script>
+    function getDashboardHtml() {
+      const punch = AppState.todayPunch;
+      const todayDateFormatted = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
+      return `
+        <div class="space-y-6 animate-in fade-in duration-300">
+          <!-- Top Row: Clock In/Out Live Card & Monthly Snapshot -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            
+            <!-- Clock In & Out Terminal Card -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-200 custom-shadow flex flex-col justify-between relative overflow-hidden">
+              <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-50 rounded-full pointer-events-none"></div>
+
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Live Time Tracker</span>
+                  <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${punch.punchedIn ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                    <span class="w-1.5 h-1.5 rounded-full ${punch.punchedIn ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}"></span>
+                    ${punch.punchedIn ? 'Currently Active' : 'Checked Out'}
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-500">${todayDateFormatted}</p>
+                <h3 id="live-duration-counter" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight my-2 font-mono">
+                  ${formatDuration(punch.durationSeconds)}
+                </h3>
+                <p class="text-[11px] text-slate-500">Daily standard quota: 8 hrs 30 mins</p>
+              </div>
+
+              <!-- Login & Logout Times Breakdown -->
+              <div class="grid grid-cols-2 gap-2 my-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs">
+                <div>
+                  <span class="text-slate-400 text-[10px] uppercase font-bold block">Login (In-Time)</span>
+                  <span class="font-bold text-slate-800 text-sm">${punch.punchInTime || '--:--'}</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 text-[10px] uppercase font-bold block">Logout (Out-Time)</span>
+                  <span class="font-bold text-slate-800 text-sm">${punch.punchOutTime || (punch.punchedIn ? 'In Progress...' : '--:--')}</span>
+                </div>
+              </div>
+
+              <!-- Punch Button -->
+              <button onclick="toggleAttendancePunch()" class="w-full py-3 px-4 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 ${punch.punchedIn ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/25' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/25'}">
+                <i class="fa-solid ${punch.punchedIn ? 'fa-arrow-right-from-bracket' : 'fa-fingerprint'}"></i>
+                <span>${punch.punchedIn ? 'Clock Out (End Shift)' : 'Clock In (Begin Shift)'}</span>
+              </button>
+            </div>
+
+            <!-- Attendance Stats Cards -->
+            <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm mb-2">
+                  <i class="fa-regular fa-calendar-check"></i>
+                </div>
+                <div>
+                  <p class="text-2xl font-extrabold text-slate-900">22</p>
+                  <p class="text-[11px] font-medium text-slate-500">Working Days</p>
+                </div>
+                <div class="text-[10px] text-blue-600 font-semibold mt-2">Sep 2026 Cycle</div>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm mb-2">
+                  <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div>
+                  <p class="text-2xl font-extrabold text-slate-900">18</p>
+                  <p class="text-[11px] font-medium text-slate-500">Days Present</p>
+                </div>
+                <div class="text-[10px] text-emerald-600 font-semibold mt-2">91% Attendance</div>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm mb-2">
+                  <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <div>
+                  <p class="text-2xl font-extrabold text-slate-900">1.5</p>
+                  <p class="text-[11px] font-medium text-slate-500">Leaves Taken</p>
+                </div>
+                <div class="text-[10px] text-amber-600 font-semibold mt-2">1 Casual, 0.5 Half</div>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm mb-2">
+                  <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <div>
+                  <p class="text-2xl font-extrabold text-slate-900">06h 40m</p>
+                  <p class="text-[11px] font-medium text-slate-500">Overtime Logged</p>
+                </div>
+                <div class="text-[10px] text-purple-600 font-semibold mt-2">Eligible for bonus</div>
+              </div>
+
+              <!-- Quick Banner inside stats -->
+              <div class="col-span-2 sm:col-span-4 bg-gradient-to-r from-indigo-700 via-indigo-600 to-brand-600 rounded-2xl p-4 text-white flex items-center justify-between">
+                <div class="space-y-1">
+                  <h4 class="font-bold text-sm">Need Punch Correction or Leaves?</h4>
+                  <p class="text-xs text-indigo-100">Submit requests directly in the self-service menu for manager sign-off.</p>
+                </div>
+                <button onclick="switchTab('menu')" class="px-3.5 py-1.5 bg-white text-indigo-700 hover:bg-indigo-50 rounded-xl text-xs font-bold shadow transition">
+                  Go to Services
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Row: Monthly Attendance Calendar & Upcoming Holidays -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            
+            <!-- Calendar Section (2 Cols on desktop) -->
+            <div class="lg:col-span-2 bg-white p-5 rounded-3xl border border-slate-200 custom-shadow space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm sm:text-base">Attendance Calendar View</h3>
+                  <p class="text-xs text-slate-500">September 2026 Monthly Breakdown</p>
+                </div>
+                <div class="flex items-center gap-1.5 text-xs">
+                  <span class="px-2 py-1 bg-slate-100 font-bold rounded-lg text-slate-700">Sep 2026</span>
+                </div>
+              </div>
+
+              <!-- Calendar Legend -->
+              <div class="flex flex-wrap items-center gap-3 text-[11px] pt-1 text-slate-600">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Present</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Absent</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Half Day</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Holiday</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Weekend</span>
+              </div>
+
+              <!-- Calendar Grid -->
+              <div class="border border-slate-100 rounded-2xl overflow-hidden text-xs">
+                <div class="grid grid-cols-7 bg-slate-50 text-center font-bold text-slate-600 py-2 border-b border-slate-100">
+                  <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div class="grid grid-cols-7 text-center">
+                  ${generateMockCalendarDays()}
+                </div>
+              </div>
+            </div>
+
+            <!-- Upcoming Holidays List -->
+            <div class="bg-white p-5 rounded-3xl border border-slate-200 custom-shadow space-y-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 class="font-bold text-slate-900 text-sm sm:text-base">Upcoming Holidays</h3>
+                    <p class="text-xs text-slate-500">Official Company Calendar</p>
+                  </div>
+                  <i class="fa-solid fa-umbrella-beach text-indigo-500 text-lg"></i>
+                </div>
+
+                <div class="space-y-2.5">
+                  ${AppState.holidays.map(h => `
+                    <div class="p-3 bg-slate-50 hover:bg-indigo-50/50 rounded-2xl border border-slate-100 transition flex items-center justify-between">
+                      <div>
+                        <p class="font-bold text-xs text-slate-800">${h.name}</p>
+                        <p class="text-[10px] text-slate-500">${h.day} &bull; ${h.badge}</p>
+                      </div>
+                      <span class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-indigo-600 shadow-sm">
+                        ${h.date}
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-100">
+                <button onclick="openWhatsAppModal(); setWaTemplate('holiday');" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                  <i class="fa-brands fa-whatsapp text-emerald-600"></i> Broadcast Holiday to Staff
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    // Helper for Calendar Days
+    function generateMockCalendarDays() {
+      // September 2026 starts on Tuesday (offset 2 empty days)
+      const offset = 2; 
+      const totalDays = 30;
+      let html = '';
+
+      // Offset padding
+      for (let i = 0; i < offset; i++) {
+        html += `<div class="p-2 border-b border-r border-slate-100 bg-slate-50/50"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dayOfWeek = (offset + day - 1) % 7;
+        const isSunday = dayOfWeek === 0;
+        const isSaturday = dayOfWeek === 6;
+        
+        let badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        let statusLabel = 'Present';
+
+        if (isSunday || isSaturday) {
+          badgeClass = 'bg-slate-100 text-slate-400 border-slate-200';
+          statusLabel = 'Off';
+        } else if (day === 8) {
+          badgeClass = 'bg-rose-50 text-rose-600 border-rose-200';
+          statusLabel = 'Absent';
+        } else if (day === 14) {
+          badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+          statusLabel = '0.5 Day';
+        } else if (day === 20) {
+          badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+          statusLabel = 'Today';
+        } else if (day > 20 && !isSunday && !isSaturday) {
+          badgeClass = 'bg-slate-50 text-slate-400 border-dashed border-slate-200';
+          statusLabel = 'Scheduled';
+        }
+
+        html += `
+          <div class="p-1.5 sm:p-2.5 border-b border-r border-slate-100 min-h-[58px] flex flex-col justify-between hover:bg-slate-50 transition cursor-default">
+            <span class="font-bold text-xs ${day === 20 ? 'text-indigo-600 font-extrabold' : 'text-slate-700'}">${day}</span>
+            <span class="text-[9px] px-1 py-0.5 rounded border ${badgeClass} font-semibold truncate">
+              ${statusLabel}
+            </span>
+          </div>
+        `;
+      }
+      return html;
+    }
+  </script>
+
+  <script>
+    function getMenuSectionHtml() {
+      const activeTab = AppState.activeMenuTab;
+
+      return `
+        <div class="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
+          
+          <!-- Subtab Navigator for Self Service -->
+          <div class="bg-white p-1.5 rounded-2xl border border-slate-200 flex gap-1.5 shadow-sm">
+            <button onclick="switchMenuSubTab('leave')" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'leave' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}">
+              <i class="fa-solid fa-plane-departure"></i>
+              <span>Apply Leave</span>
+            </button>
+            <button onclick="switchMenuSubTab('complaint')" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'complaint' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span>Lodge Complaint</span>
+            </button>
+            <button onclick="switchMenuSubTab('request_change')" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'request_change' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>Request Change</span>
+            </button>
+          </div>
+
+          <!-- Tab 1: Apply Leave -->
+          ${activeTab === 'leave' ? `
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 custom-shadow space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Apply for Leave of Absence</h3>
+                <p class="text-xs text-slate-500">Your application will be routed directly to your reporting manager for approval.</p>
+              </div>
+
+              <form onsubmit="handleApplyLeave(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Leave Type</label>
+                    <select id="leave-type" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                      <option value="Casual Leave">Casual Leave (Balance: 6 Days)</option>
+                      <option value="Sick Leave">Sick / Medical Leave (Balance: 8 Days)</option>
+                      <option value="Earned Leave">Privilege / Earned Leave (Balance: 12 Days)</option>
+                      <option value="Compensatory Off">Compensatory Off (Balance: 1 Day)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Duration Type</label>
+                    <select class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                      <option>Full Day</option>
+                      <option>First Half</option>
+                      <option>Second Half</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">From Date</label>
+                    <input type="date" id="leave-from" required value="2026-09-24" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">To Date</label>
+                    <input type="date" id="leave-to" required value="2026-09-25" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Reason for Leave</label>
+                  <textarea id="leave-reason" rows="3" required placeholder="State your reason (e.g., family emergency, medical consultation, personal matter)..." class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-paperclip text-indigo-500"></i>
+                    <span class="text-indigo-900 font-medium">Medical Certificate / Attachment (Optional)</span>
+                  </div>
+                  <span class="text-[10px] bg-white px-2 py-1 rounded-md text-slate-500 border">Max 5MB</span>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition">
+                  Submit Leave Application
+                </button>
+              </form>
+
+              <!-- Recent Leave Requests History -->
+              <div class="pt-4 border-t border-slate-100">
+                <h4 class="font-bold text-xs text-slate-800 mb-2">My Recent Applications</h4>
+                <div class="space-y-2">
+                  ${AppState.leaveRequests.map(l => `
+                    <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-800">${l.type}</span>
+                          <span class="text-[10px] text-slate-500 font-mono">(${l.days} Days)</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">${l.startDate} to ${l.endDate} &bull; ${l.reason}</p>
+                      </div>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${l.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                        ${l.status}
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Tab 2: Complaint / Grievance Register -->
+          ${activeTab === 'complaint' ? `
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 custom-shadow space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Register Grievance / Workplace Complaint</h3>
+                <p class="text-xs text-slate-500">Confidential channel directly monitored by HR and Operations leadership.</p>
+              </div>
+
+              <form onsubmit="handleRegisterComplaint(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Grievance Category</label>
+                    <select id="complaint-cat" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                      <option>Workplace Ergonomics & Seating</option>
+                      <option>Cafeteria & Amenities</option>
+                      <option>Managerial & Team Conduct</option>
+                      <option>Payroll / Reimbursement Delay</option>
+                      <option>IT & Hardware Malfunction</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Priority Level</label>
+                    <select class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                      <option>Normal (Standard turnaround: 48h)</option>
+                      <option>Urgent (Turnaround: 24h)</option>
+                      <option>Critical Escalation</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Subject Headline</label>
+                  <input type="text" id="complaint-subject" required placeholder="Brief title of the incident or problem" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Detailed Description</label>
+                  <textarea id="complaint-desc" rows="3" required placeholder="Provide clear facts, dates, location and witnesses if applicable..." class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="complaint-anonymous" class="rounded text-indigo-600 focus:ring-indigo-500">
+                    <span class="font-medium text-slate-700">Submit as Anonymous (Hide my Name & Emp ID)</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400">Strictly Enforced</span>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow transition">
+                  Lodge Official Complaint
+                </button>
+              </form>
+
+              <!-- Track Complaints -->
+              <div class="pt-4 border-t border-slate-100">
+                <h4 class="font-bold text-xs text-slate-800 mb-2">Track Registered Tickets</h4>
+                <div class="space-y-2">
+                  ${AppState.complaints.map(c => `
+                    <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100 text-xs">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-800">${c.subject}</span>
+                          <span class="text-[10px] text-indigo-600 font-medium">#${c.id}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">${c.category} &bull; ${c.details}</p>
+                      </div>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                        ${c.status}
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Tab 3: Request Change / Attendance Regularization -->
+          ${activeTab === 'request_change' ? `
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 custom-shadow space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Request Attendance Correction / Punch Regularization</h3>
+                <p class="text-xs text-slate-500">Fix biometric errors, device reader timeout, or on-duty client visits.</p>
+              </div>
+
+              <form onsubmit="handleRequestPunchChange(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Target Date</label>
+                    <input type="date" id="punch-req-date" required value="2026-09-19" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Missing Punch Type</label>
+                    <select id="punch-req-type" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                      <option>In-Time Missing (Did not register)</option>
+                      <option>Out-Time Missing (System glitch)</option>
+                      <option>Both In & Out (External On-Duty Day)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Correct Time to Register</label>
+                    <input type="time" id="punch-req-time" required value="09:15" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Manager Approver</label>
+                    <input type="text" readonly value="Rahul Roy (Operations Manager)" class="w-full p-2.5 bg-slate-100 text-slate-500 border rounded-xl cursor-not-allowed">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Reason for Punch Regularization</label>
+                  <textarea id="punch-req-reason" rows="3" required placeholder="Explain why biometric scan was missed or faulty..." class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition">
+                  Submit Punch Correction Request
+                </button>
+              </form>
+
+              <!-- List of Submitted Punch Requests -->
+              <div class="pt-4 border-t border-slate-100">
+                <h4 class="font-bold text-xs text-slate-800 mb-2">Pending Punch Requests</h4>
+                <div class="space-y-2">
+                  ${AppState.punchRequests.map(p => `
+                    <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100 text-xs">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-800">${p.missingType} (${p.date})</span>
+                          <span class="text-indigo-600 font-semibold text-[10px]">At ${p.requestedTime}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">${p.reason}</p>
+                      </div>
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                        ${p.status}
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+        </div>
+      `;
+    }
+
+    // Handlers for Services / Menus
+    function handleApplyLeave(e) {
+      e.preventDefault();
+      const type = document.getElementById('leave-type').value;
+      const startDate = document.getElementById('leave-from').value;
+      const endDate = document.getElementById('leave-to').value;
+      const reason = document.getElementById('leave-reason').value;
+
+      const newLeave = {
+        id: `LV-${Math.floor(400 + Math.random() * 500)}`,
+        empId: AppState.currentUser.id,
+        empName: AppState.currentUser.name,
+        type: type,
+        startDate: startDate,
+        endDate: endDate,
+        days: 2,
+        reason: reason,
+        status: 'Pending',
+        appliedOn: '2026-09-20'
+      };
+
+      AppState.leaveRequests.unshift(newLeave);
+      showToast("Leave Submitted", `Application for ${type} recorded. Sent to Manager.`, "success");
+      renderApp();
+    }
+
+    function handleRegisterComplaint(e) {
+      e.preventDefault();
+      const cat = document.getElementById('complaint-cat').value;
+      const subject = document.getElementById('complaint-subject').value;
+      const desc = document.getElementById('complaint-desc').value;
+      const isAnon = document.getElementById('complaint-anonymous').checked;
+
+      const newTicket = {
+        id: `CMP-${Math.floor(800 + Math.random() * 200)}`,
+        empName: isAnon ? 'Anonymous Staff' : AppState.currentUser.name,
+        category: cat,
+        subject: subject,
+        details: desc,
+        isAnonymous: isAnon,
+        status: 'Under Review',
+        submittedDate: '2026-09-20'
+      };
+
+      AppState.complaints.unshift(newTicket);
+      showToast("Complaint Lodged", `Ticket #${newTicket.id} logged. HR notified.`, "info");
+      renderApp();
+    }
+
+    function handleRequestPunchChange(e) {
+      e.preventDefault();
+      const date = document.getElementById('punch-req-date').value;
+      const type = document.getElementById('punch-req-type').value;
+      const time = document.getElementById('punch-req-time').value;
+      const reason = document.getElementById('punch-req-reason').value;
+
+      const newReq = {
+        id: `PR-${Math.floor(100 + Math.random() * 900)}`,
+        empName: AppState.currentUser.name,
+        date: date,
+        missingType: type,
+        requestedTime: time,
+        reason: reason,
+        status: 'Pending'
+      };
+
+      AppState.punchRequests.unshift(newReq);
+      showToast("Request Submitted", "Punch correction submitted to Manager for regularization.", "success");
+      renderApp();
+    }
+  </script>
+
+  <script>
+    function getManpowerManagerHtml() {
+      return `
+        <div class="space-y-6 animate-in fade-in duration-300">
+          
+          <!-- Header Actions -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 custom-shadow">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900">Manpower Operations & Workforce Roster</h2>
+              <p class="text-xs text-slate-500">Live roster, attendance validation, and automated onboarding generator.</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="openWhatsAppModal(); setWaTemplate('punch');" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow transition">
+                <i class="fa-brands fa-whatsapp"></i> Broadcast Shift Alert
+              </button>
+            </div>
+          </div>
+
+          <!-- Pending Approvals Bar (Leaves & Punches for Manager) -->
+          <div class="bg-indigo-50/70 border border-indigo-100 rounded-3xl p-4 sm:p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Manager Approvals Inbox</h3>
+              </div>
+              <span class="text-[11px] font-bold text-indigo-700">${AppState.leaveRequests.filter(l => l.status === 'Pending').length} Action Items</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${AppState.leaveRequests.filter(l => l.status === 'Pending').map(req => `
+                <div class="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm flex flex-col justify-between space-y-2">
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <p class="font-bold text-xs text-slate-900">${req.empName}</p>
+                      <p class="text-[10px] text-slate-500">${req.type} &bull; ${req.startDate} (${req.days} days)</p>
+                      <p class="text-[11px] text-slate-600 mt-1 italic">"${req.reason}"</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold">Pending</span>
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                    <button onclick="approveLeave('${req.id}')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition">
+                      Approve
+                    </button>
+                    <button onclick="rejectLeave('${req.id}')" class="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold rounded-lg transition">
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Section 2: Create Employee ID & Onboard Staff Form -->
+          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 custom-shadow space-y-4">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base">Onboard New Team Member & Generate Employee ID</h3>
+                <p class="text-xs text-slate-500">System generates verified corporate ID badge and creates login credentials.</p>
+              </div>
+              <span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-xl">Auto-ID Engine</span>
+            </div>
+
+            <form onsubmit="handleCreateEmployee(event)" class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Full Legal Name</label>
+                  <input type="text" id="new-emp-name" required placeholder="e.g. Aditi Rao" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Corporate Role</label>
+                  <select id="new-emp-role" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option value="employee">Employee / Specialist</option>
+                    <option value="manager">Shift / Team Manager</option>
+                    <option value="admin">HR / Administrator</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Department</label>
+                  <select id="new-emp-dept" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option>Operations & Supply</option>
+                    <option>Software Engineering</option>
+                    <option>Product & UI/UX</option>
+                    <option>Quality Assurance</option>
+                    <option>Finance & Payroll</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Contact Phone</label>
+                  <input type="tel" id="new-emp-phone" required placeholder="+91 98765 00000" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">WhatsApp Broadcast Number</label>
+                  <input type="tel" id="new-emp-whatsapp" required placeholder="919876500000" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Assigned Shift Window</label>
+                  <select id="new-emp-shift" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option>09:30 AM - 06:30 PM (General)</option>
+                    <option>08:00 AM - 05:00 PM (Morning)</option>
+                    <option>01:00 PM - 10:00 PM (Afternoon)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-2">
+                <p class="text-[11px] text-slate-400">Unique EMP-XXXX tag will be assigned immediately.</p>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">
+                  <i class="fa-solid fa-plus mr-1"></i> Register & Generate ID
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Section 3: Live Manpower Roster Table -->
+          <div class="bg-white rounded-3xl border border-slate-200 custom-shadow overflow-hidden">
+            <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base">Active Manpower Roster (${AppState.employees.length} Staff)</h3>
+                <p class="text-xs text-slate-500">Current shift statuses and direct communication links.</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded-lg">
+                  Present: ${AppState.employees.filter(e => e.status === 'Present').length}
+                </span>
+                <span class="text-xs bg-amber-50 text-amber-700 font-bold px-2 py-1 rounded-lg">
+                  Leave: ${AppState.employees.filter(e => e.status === 'On Leave').length}
+                </span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto text-xs">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
+                  <tr>
+                    <th class="p-3.5">Employee Name & ID</th>
+                    <th class="p-3.5">Role & Department</th>
+                    <th class="p-3.5">Status</th>
+                    <th class="p-3.5">Punch In</th>
+                    <th class="p-3.5 text-right">Quick Contact</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${AppState.employees.map(emp => `
+                    <tr class="hover:bg-slate-50/70 transition">
+                      <td class="p-3.5 flex items-center gap-3">
+                        <img src="${emp.avatar}" class="w-8 h-8 rounded-full object-cover border border-slate-200" alt="">
+                        <div>
+                          <p class="font-bold text-slate-900">${emp.name}</p>
+                          <p class="font-mono text-[10px] text-indigo-600 font-semibold">${emp.id}</p>
+                        </div>
+                      </td>
+                      <td class="p-3.5">
+                        <p class="font-semibold text-slate-800">${emp.designation}</p>
+                        <p class="text-[10px] text-slate-500">${emp.department}</p>
+                      </td>
+                      <td class="p-3.5">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          emp.status === 'Present' ? 'bg-emerald-100 text-emerald-800' :
+                          emp.status === 'On Leave' ? 'bg-rose-100 text-rose-800' :
+                          emp.status === 'Late' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                        }">
+                          ${emp.status}
+                        </span>
+                      </td>
+                      <td class="p-3.5 font-mono text-slate-700">
+                        ${emp.punchIn}
+                      </td>
+                      <td class="p-3.5 text-right">
+                        <div class="inline-flex items-center gap-1.5">
+                          <button onclick="launchDirectStaffWhatsApp('${emp.whatsapp}', '${emp.name}')" title="WhatsApp Message" class="w-7 h-7 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg flex items-center justify-center transition">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                          </button>
+                          <button onclick="pingStaffInChat('${emp.name}')" title="Team Chat Ping" class="w-7 h-7 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg flex items-center justify-center transition">
+                            <i class="fa-regular fa-comment-dots text-sm"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // Handlers for Manpower
+    function approveLeave(leaveId) {
+      const target = AppState.leaveRequests.find(l => l.id === leaveId);
+      if (target) {
+        target.status = 'Approved';
+        showToast("Leave Approved", `Approved leave request for ${target.empName}.`, "success");
+        renderApp();
+      }
+    }
+
+    function rejectLeave(leaveId) {
+      const target = AppState.leaveRequests.find(l => l.id === leaveId);
+      if (target) {
+        target.status = 'Rejected';
+        showToast("Leave Rejected", `Declined leave request for ${target.empName}.`, "warning");
+        renderApp();
+      }
+    }
+
+    function handleCreateEmployee(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-emp-name').value;
+      const role = document.getElementById('new-emp-role').value;
+      const dept = document.getElementById('new-emp-dept').value;
+      const phone = document.getElementById('new-emp-phone').value;
+      const whatsapp = document.getElementById('new-emp-whatsapp').value.replace(/\D/g, '');
+      const shift = document.getElementById('new-emp-shift').value;
+
+      const generatedId = `EMP-${Math.floor(1007 + AppState.employees.length)}`;
+
+      const newEmp = {
+        id: generatedId,
+        name: name,
+        role: role,
+        designation: `${dept} Specialist`,
+        department: dept,
+        phone: phone,
+        whatsapp: whatsapp || '919800000000',
+        status: 'Checked Out',
+        punchIn: '-',
+        punchOut: '-',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+        shift: shift
+      };
+
+      AppState.employees.unshift(newEmp);
+      showToast("Employee Enrolled", `Generated ID ${generatedId} for ${name}. Added to manpower database.`, "success");
+      renderApp();
+    }
+
+    function launchDirectStaffWhatsApp(phone, name) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const msg = encodeURIComponent(`Hi ${name}, this is manager message regarding today's shift and attendance record.`);
+      const url = `https://wa.me/${cleanPhone}?text=${msg}`;
+      window.open(url, '_blank');
+    }
+
+    function pingStaffInChat(name) {
+      toggleChatDrawer();
+      const chatInput = document.getElementById('chat-input');
+      if (chatInput) {
+        chatInput.value = `@${name}: `;
+        chatInput.focus();
+      }
+    }
+  </script>
+
+  <script>
+    function getProfileSecurityHtml() {
+      const u = AppState.currentUser;
+      return `
+        <div class="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">
+          
+          <!-- Identity Summary Card -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200 custom-shadow flex flex-col sm:flex-row items-center gap-5">
+            <div class="relative">
+              <img src="${u.avatar}" class="w-24 h-24 rounded-3xl object-cover border-2 border-indigo-500 shadow-md" alt="">
+              <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">ACTIVE</span>
+            </div>
+            <div class="text-center sm:text-left space-y-1 flex-1">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <h2 class="text-xl font-bold text-slate-900">${u.name}</h2>
+                <span class="font-mono text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold self-center sm:self-auto">${u.id}</span>
+              </div>
+              <p class="text-xs text-slate-600 font-semibold">${u.designation} &bull; ${u.department}</p>
+              <p class="text-[11px] text-slate-400">Date of Joining: ${u.joiningDate} &bull; Shift: ${u.shift}</p>
+            </div>
+          </div>
+
+          <!-- Personal Information Editor -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200 custom-shadow space-y-4">
+            <div class="border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-sm sm:text-base">Personal Contact & Corporate Record</h3>
+              <p class="text-xs text-slate-500">Keep your emergency and WhatsApp contact updated for HR dispatches.</p>
+            </div>
+
+            <form onsubmit="handleUpdateProfile(event)" class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Email Address</label>
+                  <input type="email" id="prof-email" value="${u.email}" required class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Mobile Phone Number</label>
+                  <input type="tel" id="prof-phone" value="${u.phone}" required class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Corporate Department</label>
+                  <input type="text" readonly value="${u.department}" class="w-full p-2.5 bg-slate-100 text-slate-500 border rounded-xl cursor-not-allowed">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Assigned Shift Schedule</label>
+                  <input type="text" readonly value="${u.shift}" class="w-full p-2.5 bg-slate-100 text-slate-500 border rounded-xl cursor-not-allowed">
+                </div>
+              </div>
+
+              <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">
+                Save Profile Changes
+              </button>
+            </form>
+          </div>
+
+          <!-- Change Password Module -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200 custom-shadow space-y-4">
+            <div class="border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-sm sm:text-base">Change Password & Account Security</h3>
+              <p class="text-xs text-slate-500">Ensure password has at least 8 characters with numbers and symbols.</p>
+            </div>
+
+            <form onsubmit="handleChangePassword(event)" class="space-y-4 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Current Password</label>
+                <input type="password" id="old-pass" required placeholder="••••••••" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">New Password</label>
+                  <input type="password" id="new-pass" required placeholder="Enter new strong password" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Confirm New Password</label>
+                  <input type="password" id="confirm-pass" required placeholder="Repeat new password" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+              </div>
+
+              <button type="submit" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition">
+                Update Password
+              </button>
+            </form>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function handleUpdateProfile(e) {
+      e.preventDefault();
+      const email = document.getElementById('prof-email').value;
+      const phone = document.getElementById('prof-phone').value;
+      
+      AppState.currentUser.email = email;
+      AppState.currentUser.phone = phone;
+      
+      showToast("Profile Updated", "Your contact details have been successfully synced.", "success");
+      renderApp();
+    }
+
+    function handleChangePassword(e) {
+      e.preventDefault();
+      const newP = document.getElementById('new-pass').value;
+      const confP = document.getElementById('confirm-pass').value;
+
+      if (newP !== confP) {
+        showToast("Password Mismatch", "The new passwords you entered do not match.", "error");
+        return;
+      }
+      if (newP.length < 6) {
+        showToast("Weak Password", "Please choose a password with at least 6 characters.", "warning");
+        return;
+      }
+
+      showToast("Security Updated", "Your password has been changed successfully.", "success");
+      document.getElementById('old-pass').value = '';
+      document.getElementById('new-pass').value = '';
+      document.getElementById('confirm-pass').value = '';
+    }
+
+    // Notifications Center View
+    function getNotificationsViewHtml() {
+      return `
+        <div class="max-w-3xl mx-auto space-y-4 animate-in fade-in duration-300">
+          <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
+            <div>
+              <h2 class="font-bold text-slate-900 text-sm sm:text-base">System Notification Center</h2>
+              <p class="text-xs text-slate-500">Action items, policy alerts and leave updates.</p>
+            </div>
+            <button onclick="markAllNotificationsRead()" class="text-xs font-semibold text-indigo-600 hover:underline">
+              Mark all as read
+            </button>
+          </div>
+
+          <div class="space-y-2.5">
+            ${AppState.notifications.map(n => `
+              <div class="p-4 rounded-2xl border transition flex items-start gap-3.5 ${n.read ? 'bg-white border-slate-200' : 'bg-indigo-50/50 border-indigo-200'}">
+                <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm">
+                  <i class="fa-solid ${n.icon}"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-slate-900">${n.title}</h4>
+                    <span class="text-[10px] text-slate-400">${n.time}</span>
+                  </div>
+                  <p class="text-slate-600 mt-0.5">${n.desc}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function markAllNotificationsRead() {
+      AppState.notifications.forEach(n => n.read = true);
+      showToast("Cleared", "All notifications marked as read.", "info");
+      renderApp();
+    }
+  </script>
+
+  <script>
+    function openWhatsAppModal() {
+      document.getElementById('whatsapp-modal').classList.remove('hidden');
+    }
+
+    function closeWhatsAppModal() {
+      document.getElementById('whatsapp-modal').classList.add('hidden');
+    }
+
+    function setWaTemplate(type) {
+      const msgInput = document.getElementById('wa-message');
+      if (type === 'punch') {
+        msgInput.value = "WorkPulse Reminder: Please ensure you punch in for your scheduled morning shift before 10:00 AM to prevent late penalty.";
+      } else if (type === 'leave') {
+        msgInput.value = "Great news! Your requested leave of absence has been officially approved by the Operations Manager.";
+      } else if (type === 'holiday') {
+        msgInput.value = "Upcoming Holiday Notification: The office and operations hub will remain closed on Friday for Gandhi Jayanti.";
+      } else if (type === 'meeting') {
+        msgInput.value = "Urgent: Operations manpower briefing starting in 15 minutes at Conference Room B or via remote link.";
+      }
+    }
+
+    function sendDirectWhatsApp() {
+      const rawPhone = document.getElementById('wa-phone').value.replace(/\D/g, '');
+      const msg = encodeURIComponent(document.getElementById('wa-message').value);
+      
+      if (!rawPhone) {
+        showToast("Phone Required", "Please enter a valid mobile number.", "warning");
+        return;
+      }
+
+      const waUrl = `https://wa.me/${rawPhone}?text=${msg}`;
+      window.open(waUrl, '_blank');
+      closeWhatsAppModal();
+      showToast("WhatsApp Opened", "Forwarded template to your WhatsApp application.", "success");
+    }
+
+    function sendSimulatedTeamChat() {
+      const msg = document.getElementById('wa-message').value;
+      AppState.chatMessages.push({
+        sender: AppState.currentUser.name,
+        text: msg,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        self: true
+      });
+      closeWhatsAppModal();
+      toggleChatDrawer(true);
+      renderChatMessages();
+      showToast("Dispatched", "Message broadcasted to in-app team manpower chat.", "info");
+    }
+
+    // In-App Chat Window Logic
+    function toggleChatDrawer(forceOpen = false) {
+      const drawer = document.getElementById('chat-drawer');
+      if (forceOpen) {
+        drawer.classList.remove('hidden');
+      } else {
+        drawer.classList.toggle('hidden');
+      }
+      if (!drawer.classList.contains('hidden')) {
+        renderChatMessages();
+      }
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages');
+      if (!container) return;
+      
+      container.innerHTML = AppState.chatMessages.map(m => `
+        <div class="flex flex-col ${m.self ? 'items-end' : 'items-start'}">
+          <span class="text-[10px] text-slate-400 mb-0.5">${m.sender} &bull; ${m.time}</span>
+          <div class="max-w-[85%] p-2.5 rounded-2xl text-xs ${m.self ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm'}">
+            ${m.text}
+          </div>
+        </div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      AppState.chatMessages.push({
+        sender: AppState.currentUser.name,
+        text: text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        self: true
+      });
+
+      input.value = '';
+      renderChatMessages();
+    }
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderApp();
+    });
+  </script>
+</body>
+</html>

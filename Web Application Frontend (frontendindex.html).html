@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkPulse HRMS - Web Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
+
+  <div id="app" class="w-full max-w-[1550px] mx-auto min-h-screen flex flex-row relative bg-white shadow-xl">
+
+    <!-- LOGIN SCREEN MODAL -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-100">
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-white text-2xl mb-3 shadow-lg shadow-indigo-200">
+            <i class="fa-solid fa-desktop"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-900">WorkPulse Web Portal</h2>
+          <p class="text-xs text-slate-500 mt-1">Enterprise Attendance, Dual Approval & Manpower Management</p>
+        </div>
+
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="text-xs font-bold text-slate-600 block mb-1">Select Role</label>
+            <select id="loginRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500">
+              <option value="Manager">Manager (Full Add & Edit Access)</option>
+              <option value="Admin">Admin (Full Control & Dual Sign-off)</option>
+              <option value="Employee">Employee (Read-Only Profile)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 block mb-1">Employee ID</label>
+            <input type="text" id="loginId" value="EMP-1002" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 block mb-1">Password</label>
+            <input type="password" value="••••••••" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-200 transition">
+            Sign In to Web Terminal
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0">
+      <div>
+        <div class="flex items-center space-x-3 mb-8">
+          <div class="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-600/30">
+            WP
+          </div>
+          <div>
+            <h1 class="text-white font-extrabold text-lg leading-tight">WorkPulse</h1>
+            <span id="badgeRole" class="text-[10px] uppercase font-extrabold tracking-wider text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded-md">Manager</span>
+          </div>
+        </div>
+
+        <nav class="space-y-1.5 text-sm font-medium">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-600 text-white shadow-sm transition">
+            <i class="fa-solid fa-clock w-5 text-center"></i>
+            <span>Attendance & Terminal</span>
+          </button>
+          <button onclick="switchTab('services')" id="nav-services" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition">
+            <i class="fa-solid fa-hand-holding-hand w-5 text-center"></i>
+            <span>Requests & Leaves</span>
+          </button>
+          <button onclick="switchTab('approvals')" id="nav-approvals" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition">
+            <i class="fa-solid fa-signature w-5 text-center"></i>
+            <span>Dual Approvals</span>
+            <span id="approvalBadgeCount" class="ml-auto bg-amber-500 text-slate-900 font-extrabold text-[10px] px-2 py-0.5 rounded-full">0</span>
+          </button>
+          <button onclick="switchTab('manpower')" id="nav-manpower" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition">
+            <i class="fa-solid fa-users-gear w-5 text-center"></i>
+            <span>Manpower & Team</span>
+          </button>
+          <button onclick="switchTab('payslips')" id="nav-payslips" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition">
+            <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i>
+            <span>Payslip Hub</span>
+          </button>
+          <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition">
+            <i class="fa-solid fa-user-shield w-5 text-center"></i>
+            <span>Profile & Security</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800 flex items-center justify-between">
+        <div class="truncate">
+          <p id="profileNameDisplay" class="text-xs font-bold text-white truncate">Ananya Roy</p>
+          <p id="profileIdDisplay" class="text-[11px] text-slate-400 truncate">EMP-1002 (Manager)</p>
+        </div>
+        <button onclick="openLogin()" title="Switch Account / Logout" class="text-slate-400 hover:text-rose-400 p-2">
+          <i class="fa-solid fa-power-off"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEW AREA -->
+    <main class="flex-1 flex flex-col bg-slate-50 min-h-0 overflow-y-auto custom-scroll">
+      
+      <!-- DESKTOP TOP BAR -->
+      <header class="flex items-center justify-between px-8 py-5 bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div>
+          <h2 id="headerTitle" class="text-xl font-extrabold text-slate-800">Biometric Attendance Terminal</h2>
+          <p id="headerSubtitle" class="text-xs text-slate-500 mt-0.5">Live WebAuthn Sensor Sync, Punches & Interactive Calendar</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="biometricStatusLabel">WebAuthn Hardware Sensor Ready</span>
+          </div>
+          <button onclick="exportDataToCSV('roster')" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1.5 border border-slate-200">
+            <i class="fa-solid fa-file-csv text-emerald-600"></i>
+            <span>Export Roster CSV</span>
+          </button>
+          <button onclick="sendQuickWhatsApp('Shift and attendance roster updated.')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-brands fa-whatsapp text-sm"></i>
+            <span>WhatsApp Broadcast</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="p-8 space-y-8">
+
+        <!-- TAB 1: ATTENDANCE & BIOMETRIC -->
+        <section id="tab-dashboard" class="space-y-6">
+          
+          <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-7 rounded-3xl shadow-xl flex flex-row items-center justify-between gap-8 border border-slate-800">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Web Biometric Terminal</span>
+                <span class="text-[10px] bg-indigo-800/80 px-2.5 py-0.5 rounded-full font-semibold text-indigo-200">WEB-SYNC-2026</span>
+              </div>
+              <h3 class="text-4xl font-black font-mono tracking-tight" id="liveClock">--:--:--</h3>
+              
+              <div class="flex items-center gap-3 text-xs pt-1">
+                <span class="text-slate-400 font-semibold text-[11px]">Sensor Method:</span>
+                <button onclick="setBiometricMode('webauthn')" id="btn-mode-webauthn" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold flex items-center space-x-1.5">
+                  <i class="fa-solid fa-fingerprint"></i>
+                  <span>Hardware Fingerprint / Face ID</span>
+                </button>
+                <button onclick="setBiometricMode('camera')" id="btn-mode-camera" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center space-x-1.5">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Optical Camera Scanner</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-3 mt-3 text-xs">
+                <span class="bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700">Punch In: <strong id="punchInDisplay" class="text-emerald-400">--:--</strong></span>
+                <span class="bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-700">Punch Out: <strong id="punchOutDisplay" class="text-rose-400">--:--</strong></span>
+                <span class="bg-emerald-500/20 text-emerald-300 px-3.5 py-1.5 rounded-xl font-bold" id="activeTimeCount">Shift: 00h 00m</span>
+              </div>
+            </div>
+
+            <div class="flex flex-row gap-3">
+              <button onclick="triggerNativeBiometric('in')" class="px-7 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg transition flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-fingerprint text-lg"></i>
+                <span>Biometric Check-In</span>
+              </button>
+              <button onclick="triggerNativeBiometric('out')" class="px-7 py-4 bg-rose-600/90 hover:bg-rose-700 text-white font-extrabold rounded-2xl shadow-lg transition flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                <span>Biometric Check-Out</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between mb-5">
+                <div>
+                  <h4 class="font-extrabold text-slate-800 text-base">Attendance Calendar</h4>
+                  <span class="text-xs text-slate-400 font-semibold">September 2026 - 26 Working Days</span>
+                </div>
+                <button onclick="exportDataToCSV('calendar')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center space-x-1.5">
+                  <i class="fa-solid fa-download"></i> <span>Export Days (.CSV)</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 py-2 border-b border-slate-100">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div class="grid grid-cols-7 gap-2 pt-3 text-center text-xs" id="calendarGrid"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-slate-800 text-base mb-4">Upcoming Holidays</h4>
+                <div class="space-y-3">
+                  <div class="p-3.5 bg-purple-50/70 border border-purple-100 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <p class="text-xs font-bold text-purple-900">Gandhi Jayanti</p>
+                      <p class="text-[11px] text-purple-600">Fri, Oct 2, 2026</p>
+                    </div>
+                    <span class="text-[10px] bg-purple-200 text-purple-800 font-bold px-2 py-0.5 rounded-full">National</span>
+                  </div>
+                  <div class="p-3.5 bg-purple-50/70 border border-purple-100 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <p class="text-xs font-bold text-purple-900">Dussehra</p>
+                      <p class="text-[11px] text-purple-600">Mon, Oct 20, 2026</p>
+                    </div>
+                    <span class="text-[10px] bg-purple-200 text-purple-800 font-bold px-2 py-0.5 rounded-full">Gazetted</span>
+                  </div>
+                  <div class="p-3.5 bg-purple-50/70 border border-purple-100 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <p class="text-xs font-bold text-purple-900">Diwali (Deepavali)</p>
+                      <p class="text-[11px] text-purple-600">Sun, Nov 8, 2026</p>
+                    </div>
+                    <span class="text-[10px] bg-purple-200 text-purple-800 font-bold px-2 py-0.5 rounded-full">Gazetted</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="sendQuickWhatsApp('Holiday list updates broadcast')" class="mt-4 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center space-x-2">
+                <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+                <span>Broadcast Holiday Schedule</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: REQUESTS -->
+        <section id="tab-services" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 text-indigo-600 font-bold text-sm">
+                <i class="fa-solid fa-calendar-plus text-base"></i>
+                <span>Apply for Leave</span>
+              </div>
+              <form onsubmit="submitLeaveRequest(event)" class="space-y-3 text-xs">
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Leave Type</label>
+                  <select id="leaveType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <option>Casual Leave (CL)</option>
+                    <option>Sick / Medical Leave (SL)</option>
+                    <option>Privilege Leave (PL)</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="font-bold text-slate-600 block mb-1">From</label>
+                    <input type="date" id="leaveFrom" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                  </div>
+                  <div>
+                    <label class="font-bold text-slate-600 block mb-1">To</label>
+                    <input type="date" id="leaveTo" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                  </div>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Reason</label>
+                  <textarea id="leaveReason" rows="3" placeholder="State reason..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition">
+                  Submit (Dual Approval)
+                </button>
+              </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 text-amber-600 font-bold text-sm">
+                <i class="fa-solid fa-address-card text-base"></i>
+                <span>Request Change My Details</span>
+              </div>
+              <p class="text-[11px] text-slate-500">Employee profiles are read-only. Submit a change ticket for Manager & Admin sign-off.</p>
+              <form onsubmit="submitDetailsChangeRequest(event)" class="space-y-3 text-xs">
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Field</label>
+                  <select id="reqChangeField" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <option value="Phone Number">WhatsApp Phone Number</option>
+                    <option value="Official Email">Official Email</option>
+                    <option value="Emergency Contact">Emergency Contact</option>
+                    <option value="Address">Residential Address</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Proposed Value</label>
+                  <input type="text" id="reqChangeValue" required placeholder="Enter new details..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Reason</label>
+                  <textarea id="reqChangeReason" rows="3" placeholder="Reason for change..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition">
+                  Submit Detail Request
+                </button>
+              </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 text-rose-600 font-bold text-sm">
+                <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                <span>Complaint & Punch Correction</span>
+              </div>
+              <form onsubmit="submitGrievanceOrPunch(event)" class="space-y-3 text-xs">
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Type</label>
+                  <select id="ticketType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <option value="Punch Correction">Missed Biometric Regularization</option>
+                    <option value="Workplace Grievance">Workplace Grievance</option>
+                    <option value="Payroll Discrepancy">Payroll Discrepancy</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Details & Timestamps</label>
+                  <textarea id="ticketDetails" rows="4" placeholder="Detail date, time missed or complaint..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5"></textarea>
+                </div>
+                <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition">
+                  Dispatch Ticket
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: DUAL APPROVAL SYSTEM -->
+        <section id="tab-approvals" class="hidden space-y-6">
+          <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 class="font-black text-slate-800 text-base">Dual-Body Approval Workflow</h3>
+                <p class="text-xs text-slate-500">Every request requires sign-off from both <strong>Manager</strong> and <strong>Admin</strong></p>
+              </div>
+              <div class="text-xs bg-slate-100 px-3.5 py-1.5 rounded-xl font-bold text-slate-700">
+                Active Approver: <span class="text-indigo-600 font-black" id="approvalCurrentRoleDisplay">Manager</span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th class="p-3.5">Req ID</th>
+                    <th class="p-3.5">Staff</th>
+                    <th class="p-3.5">Category</th>
+                    <th class="p-3.5">Detail</th>
+                    <th class="p-3.5">Manager Sign-off</th>
+                    <th class="p-3.5">Admin Sign-off</th>
+                    <th class="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dualApprovalTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: TEAM ROSTER & MANAGER ONBOARDING -->
+        <section id="tab-manpower" class="hidden space-y-6">
+          <div id="managerOnboardBox" class="bg-indigo-50/90 border border-indigo-200 p-6 rounded-3xl">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-extrabold text-indigo-950 text-base flex items-center gap-2">
+                  <i class="fa-solid fa-user-plus text-indigo-600"></i>
+                  <span>Manager & Admin: Onboard New Team Member</span>
+                </h3>
+                <p class="text-xs text-indigo-700">Auto-generates official company email, employee ID & defaults role & department</p>
+              </div>
+              <span class="text-xs font-black bg-indigo-200 text-indigo-900 px-3 py-1 rounded-full">Full Manager & Admin Access</span>
+            </div>
+
+            <form onsubmit="handleOnboard(event)" class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Full Name</label>
+                  <input type="text" id="onboardName" oninput="autoFillEmployeeFields()" placeholder="e.g. Ramesh Patel" required class="w-full bg-white border border-slate-300 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Department</label>
+                  <select id="onboardDept" onchange="autoFillEmployeeFields()" class="w-full bg-white border border-slate-300 rounded-xl p-2.5">
+                    <option value="Engineering">Engineering</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Logistics">Logistics</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Assigned Role</label>
+                  <select id="onboardRole" class="w-full bg-white border border-slate-300 rounded-xl p-2.5">
+                    <option value="Employee">Employee</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">WhatsApp Mobile</label>
+                  <input type="text" id="onboardPhone" placeholder="+919876543210" required class="w-full bg-white border border-slate-300 rounded-xl p-2.5">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-4 rounded-2xl border border-indigo-100">
+                <div>
+                  <label class="font-bold text-indigo-900 block mb-1">Auto-Generated Employee ID</label>
+                  <input type="text" id="onboardGeneratedId" readonly class="w-full bg-indigo-50 font-mono font-bold text-indigo-700 border border-indigo-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-indigo-900 block mb-1">Auto-Generated Official Email</label>
+                  <input type="email" id="onboardGeneratedEmail" readonly class="w-full bg-indigo-50 font-mono font-bold text-indigo-700 border border-indigo-200 rounded-xl p-2.5">
+                </div>
+              </div>
+
+              <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md transition text-xs">
+                Create Employee Profile & Register Biometrics
+              </button>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h4 class="font-extrabold text-slate-800 text-base">Staff Master Roster</h4>
+                <p class="text-xs text-slate-400 font-medium">Managers & Admins have full add, edit, and delete access. Auto-persisted in local database.</p>
+              </div>
+              <button onclick="exportDataToCSV('roster')" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold flex items-center space-x-1.5">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Download Spreadsheet (.CSV)</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th class="p-4">Emp ID</th>
+                    <th class="p-4">Staff & Email</th>
+                    <th class="p-4">Role</th>
+                    <th class="p-4">Department</th>
+                    <th class="p-4">Biometric Sensor</th>
+                    <th class="p-4 text-right">Controls</th>
+                  </tr>
+                </thead>
+                <tbody id="staffRosterTbody" class="divide-y divide-slate-100 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: PAYSLIP HUB -->
+        <section id="tab-payslips" class="hidden space-y-6">
+          <div class="bg-white p-7 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 class="font-black text-slate-800 text-base">Monthly Salary & Payslip Registry</h3>
+                <p class="text-xs text-slate-500">Calculated from 26 working days & approved biometric attendance</p>
+              </div>
+              <button onclick="window.print()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-2">
+                <i class="fa-solid fa-print"></i>
+                <span>Print Payslip Document</span>
+              </button>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-3xl p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="space-y-1">
+                <span class="text-[11px] font-bold uppercase text-slate-400">Statement For</span>
+                <h4 class="font-extrabold text-slate-800 text-base">September 2026</h4>
+                <p class="text-xs text-slate-500">Employee: <strong id="payslipEmpName">Ananya Roy</strong> (<span id="payslipEmpId">EMP-1002</span>)</p>
+                <p class="text-xs text-slate-500">Department: <span id="payslipEmpDept">Engineering</span></p>
+                <div class="pt-2 text-xs font-semibold text-emerald-600">Biometric Present: 24/26 Days</div>
+              </div>
+
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-200">
+                  <span class="text-slate-500">Basic Pay</span>
+                  <span class="font-bold text-slate-800">₹45,000</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200">
+                  <span class="text-slate-500">House Rent Allowance (HRA)</span>
+                  <span class="font-bold text-slate-800">₹18,000</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-200">
+                  <span class="text-slate-500">Special Allowances</span>
+                  <span class="font-bold text-slate-800">₹7,500</span>
+                </div>
+              </div>
+
+              <div class="space-y-2 text-xs bg-white p-4 rounded-2xl border border-slate-200">
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Provident Fund (PF)</span>
+                  <span class="font-bold text-rose-600">- ₹3,600</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Professional Tax</span>
+                  <span class="font-bold text-rose-600">- ₹200</span>
+                </div>
+                <div class="flex justify-between pt-2">
+                  <span class="font-black text-slate-800">Net Take-Home Pay</span>
+                  <span class="font-black text-emerald-600 text-sm">₹66,700</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: PROFILE -->
+        <section id="tab-profile" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-7 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 text-indigo-600 font-bold text-sm">
+                  <i class="fa-solid fa-id-card text-base"></i>
+                  <span>Personal Profile</span>
+                </div>
+                <span id="profileLockNotice" class="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-extrabold">
+                  Manager Edit Access Active
+                </span>
+              </div>
+              
+              <form onsubmit="handleManagerProfileUpdate(event)" class="space-y-3.5 text-xs">
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Full Name</label>
+                  <input type="text" id="profName" value="Ananya Roy" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Employee ID</label>
+                  <input type="text" id="profId" value="EMP-1002" disabled class="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-slate-500 font-mono font-bold">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Official Email</label>
+                  <input type="email" id="profEmail" value="ananya.roy@company.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">WhatsApp Mobile</label>
+                  <input type="text" id="profPhone" value="+91 98765 43211" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Department</label>
+                  <input type="text" id="profDept" value="Engineering" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                
+                <button type="submit" id="managerSaveProfileBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition">
+                  Save Changes (Manager / Admin Access)
+                </button>
+              </form>
+            </div>
+
+            <div class="bg-white p-7 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 text-slate-800 font-bold text-sm">
+                <i class="fa-solid fa-lock text-amber-500 text-base"></i>
+                <span>Change Password</span>
+              </div>
+              <form onsubmit="handlePasswordChange(event)" class="space-y-3.5 text-xs">
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Current Password</label>
+                  <input type="password" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">New Password</label>
+                  <input type="password" id="p1" required placeholder="Min 8 chars" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <div>
+                  <label class="font-bold text-slate-600 block mb-1">Confirm New Password</label>
+                  <input type="password" id="p2" required placeholder="Re-type password" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                </div>
+                <button type="submit" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition">
+                  Update Password
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MANAGER & ADMIN EDIT MODAL -->
+  <div id="managerEditModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg p-7 rounded-3xl shadow-2xl border border-slate-100 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h4 class="font-black text-slate-800 text-sm">Manager / Admin: Edit Employee Details</h4>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="saveEmployeeEdit(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editEmpIndex">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Employee ID</label>
+          <input type="text" id="editEmpId" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 font-mono font-bold text-slate-600">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Full Name</label>
+          <input type="text" id="editEmpName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Role</label>
+            <select id="editEmpRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+              <option value="Employee">Employee</option>
+              <option value="Manager">Manager</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Department</label>
+            <select id="editEmpDept" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+              <option value="Engineering">Engineering</option>
+              <option value="Operations">Operations</option>
+              <option value="Human Resources">Human Resources</option>
+              <option value="Finance">Finance</option>
+              <option value="Logistics">Logistics</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Official Email</label>
+          <input type="email" id="editEmpEmail" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">WhatsApp Phone</label>
+          <input type="text" id="editEmpPhone" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+        </div>
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-slate-600">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold">Save Updates</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SENSOR DIALOG -->
+  <div id="biometricModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm p-6 rounded-3xl text-center space-y-4 shadow-2xl">
+      <div class="w-20 h-20 mx-auto rounded-full bg-indigo-50 border-4 border-indigo-200 flex items-center justify-center text-indigo-600 text-3xl animate-pulse">
+        <i class="fa-solid fa-fingerprint" id="bioModalIcon"></i>
+      </div>
+      <div>
+        <h4 class="font-black text-slate-800 text-base" id="bioModalTitle">Communicating with Sensor...</h4>
+        <p class="text-xs text-slate-400 mt-1" id="bioModalSubtitle">Follow on-screen fingerprint or face scanner prompt</p>
+      </div>
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div id="bioProgressBar" class="bg-indigo-600 h-full w-0 transition-all duration-700"></div>
+      </div>
+      <p class="text-[11px] font-mono font-bold text-indigo-700">Hardware Sensor Connected</p>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    const defaultRoster = [
+      { id: "EMP-1001", name: "Suresh Mehra", role: "Admin", dept: "Operations", email: "suresh.mehra@company.com", phone: "+919876543210", bioSync: "WebAuthn Registered" },
+      { id: "EMP-1002", name: "Ananya Roy", role: "Manager", dept: "Engineering", email: "ananya.roy@company.com", phone: "+919876543211", bioSync: "Hardware Fingerprint" },
+      { id: "EMP-1003", name: "Vikram Seth", role: "Employee", dept: "Logistics", email: "vikram.seth@company.com", phone: "+919876543212", bioSync: "Optical Face Sync" },
+      { id: "EMP-1004", name: "Pooja Sharma", role: "Employee", dept: "Human Resources", email: "pooja.sharma@company.com", phone: "+919876543213", bioSync: "WebAuthn Registered" }
+    ];
+
+    const defaultTickets = [
+      {
+        id: "TKT-801",
+        staffName: "Vikram Seth",
+        staffId: "EMP-1003",
+        type: "Leave (Casual)",
+        detail: "Oct 5 - Oct 7 (3 Days)",
+        managerStatus: "Approved",
+        adminStatus: "Pending",
+        finalStatus: "Awaiting Admin"
+      },
+      {
+        id: "TKT-802",
+        staffName: "Pooja Sharma",
+        staffId: "EMP-1004",
+        type: "Change My Details",
+        detail: "Update Phone: +91 99887 76655",
+        managerStatus: "Pending",
+        adminStatus: "Pending",
+        finalStatus: "Pending Both"
+      }
+    ];
+
+    let staffRoster = JSON.parse(localStorage.getItem('wp_roster')) || defaultRoster;
+    let approvalTickets = JSON.parse(localStorage.getItem('wp_tickets')) || defaultTickets;
+
+    function saveState() {
+      localStorage.setItem('wp_roster', JSON.stringify(staffRoster));
+      localStorage.setItem('wp_tickets', JSON.stringify(approvalTickets));
+    }
+
+    let currentUser = {
+      name: "Ananya Roy",
+      id: "EMP-1002",
+      role: "Manager",
+      email: "ananya.roy@company.com",
+      dept: "Engineering",
+      phone: "+919876543211"
+    };
+
+    let activeBiometricMode = 'webauthn';
+    let workTimer = null;
+
+    window.onload = () => {
+      startLiveClock();
+      renderCalendar();
+      enforceRolePermissions();
+    };
+
+    function startLiveClock() {
+      setInterval(() => {
+        const now = new Date();
+        document.getElementById("liveClock").innerText = now.toLocaleTimeString();
+      }, 1000);
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+      for (let i = 0; i < 2; i++) grid.innerHTML += `<div></div>`;
+      for (let day = 1; day <= 30; day++) {
+        let dot = "bg-emerald-500";
+        if ([6, 13, 20, 27].includes(day)) dot = "bg-slate-300";
+        if ([8, 19].includes(day)) dot = "bg-amber-400";
+        if (day === 22) dot = "bg-rose-500";
+        if (day === 2) dot = "bg-purple-500";
+
+        grid.innerHTML += `
+          <div class="p-3 border border-slate-100 rounded-2xl hover:bg-slate-50 flex flex-col items-center">
+            <span class="font-bold text-slate-700">${day}</span>
+            <span class="w-2 h-2 rounded-full ${dot} mt-1.5"></span>
+          </div>
+        `;
+      }
+    }
+
+    function setBiometricMode(mode) {
+      activeBiometricMode = mode;
+      const b1 = document.getElementById('btn-mode-webauthn');
+      const b2 = document.getElementById('btn-mode-camera');
+      if (mode === 'webauthn') {
+        b1.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold flex items-center space-x-1.5";
+        b2.className = "px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center space-x-1.5";
+      } else {
+        b2.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold flex items-center space-x-1.5";
+        b1.className = "px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center space-x-1.5";
+      }
+      document.getElementById("biometricStatusLabel").innerText = mode === 'webauthn' 
+        ? "Hardware Fingerprint / Face ID Sensor Online" 
+        : "Optical Camera Scanner Online";
+    }
+
+    async function triggerNativeBiometric(actionType) {
+      const modal = document.getElementById("biometricModal");
+      const bar = document.getElementById("bioProgressBar");
+      const icon = document.getElementById("bioModalIcon");
+      modal.classList.remove("hidden");
+      bar.style.width = "25%";
+
+      icon.className = activeBiometricMode === 'webauthn' ? "fa-solid fa-fingerprint text-3xl" : "fa-solid fa-camera text-3xl";
+
+      if (window.PublicKeyCredential && activeBiometricMode === 'webauthn') {
+        try {
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          if (available) bar.style.width = "65%";
+        } catch (err) {}
+      }
+
+      setTimeout(() => { bar.style.width = "85%"; }, 400);
+
+      setTimeout(() => {
+        bar.style.width = "100%";
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (actionType === 'in') {
+          document.getElementById("punchInDisplay").innerText = timeStr;
+          alert(`Biometric Verified! ${currentUser.name} (${currentUser.id}) Logged IN at ${timeStr}`);
+          startShiftDuration();
+        } else {
+          document.getElementById("punchOutDisplay").innerText = timeStr;
+          clearInterval(workTimer);
+          alert(`Biometric Verified! ${currentUser.name} Logged OUT at ${timeStr}`);
+        }
+
+        modal.classList.add("hidden");
+        bar.style.width = "0%";
+      }, 1000);
+    }
+
+    function startShiftDuration() {
+      let sec = 0;
+      clearInterval(workTimer);
+      workTimer = setInterval(() => {
+        sec++;
+        let hrs = Math.floor(sec / 3600);
+        let mins = Math.floor((sec % 3600) / 60);
+        document.getElementById("activeTimeCount").innerText = `Shift: ${hrs}h ${mins}m`;
+      }, 1000);
+    }
+
+    function switchTab(tabId) {
+      ['dashboard', 'services', 'approvals', 'manpower', 'payslips', 'profile'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).className = "nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800 hover:text-white text-slate-400 transition";
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`nav-${tabId}`).className = "nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-indigo-600 text-white shadow-sm transition";
+    }
+
+    function enforceRolePermissions() {
+      const isEmployee = currentUser.role === 'Employee';
+
+      document.getElementById("badgeRole").innerText = currentUser.role;
+      document.getElementById("profileIdDisplay").innerText = `${currentUser.id} (${currentUser.role})`;
+      document.getElementById("profileNameDisplay").innerText = currentUser.name;
+      document.getElementById("approvalCurrentRoleDisplay").innerText = currentUser.role;
+
+      document.getElementById("payslipEmpName").innerText = currentUser.name;
+      document.getElementById("payslipEmpId").innerText = currentUser.id;
+      document.getElementById("payslipEmpDept").innerText = currentUser.dept;
+
+      document.getElementById("profName").disabled = isEmployee;
+      document.getElementById("profEmail").disabled = isEmployee;
+      document.getElementById("profPhone").disabled = isEmployee;
+      document.getElementById("profDept").disabled = isEmployee;
+
+      const saveProfileBtn = document.getElementById("managerSaveProfileBtn");
+      const lockNotice = document.getElementById("profileLockNotice");
+      const onboardBox = document.getElementById("managerOnboardBox");
+
+      if (isEmployee) {
+        saveProfileBtn.classList.add("hidden");
+        lockNotice.innerText = "Read-Only: Submit 'Request Change My Details' to update";
+        lockNotice.className = "text-[10px] bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full font-bold";
+        onboardBox.classList.add("hidden");
+      } else {
+        saveProfileBtn.classList.remove("hidden");
+        lockNotice.innerText = `${currentUser.role} Full Edit Access Active`;
+        lockNotice.className = "text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold";
+        onboardBox.classList.remove("hidden");
+      }
+
+      renderStaffRoster();
+      renderDualApprovals();
+    }
+
+    function autoFillEmployeeFields() {
+      const name = document.getElementById("onboardName").value.trim();
+      if (!name) {
+        document.getElementById("onboardGeneratedId").value = "";
+        document.getElementById("onboardGeneratedEmail").value = "";
+        return;
+      }
+      const cleanName = name.toLowerCase().replace(/\s+/g, '.');
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      if (!document.getElementById("onboardGeneratedId").value) {
+        document.getElementById("onboardGeneratedId").value = `EMP-${randomSuffix}`;
+      }
+      document.getElementById("onboardGeneratedEmail").value = `${cleanName}@company.com`;
+    }
+
+    function handleOnboard(e) {
+      e.preventDefault();
+      if (currentUser.role === 'Employee') {
+        alert("Employees cannot onboard staff!");
+        return;
+      }
+
+      const id = document.getElementById("onboardGeneratedId").value;
+      const email = document.getElementById("onboardGeneratedEmail").value;
+      const name = document.getElementById("onboardName").value;
+      const dept = document.getElementById("onboardDept").value;
+      const role = document.getElementById("onboardRole").value;
+      const phone = document.getElementById("onboardPhone").value;
+
+      staffRoster.unshift({
+        id,
+        name,
+        dept,
+        role,
+        email,
+        phone,
+        bioSync: "WebAuthn & Sensor Linked"
+      });
+
+      saveState();
+      renderStaffRoster();
+      alert(`Staff Onboarded by ${currentUser.role}!\nEmployee ID: ${id}\nOfficial Email: ${email}`);
+      e.target.reset();
+      document.getElementById("onboardGeneratedId").value = "";
+      document.getElementById("onboardGeneratedEmail").value = "";
+    }
+
+    function renderStaffRoster() {
+      const tbody = document.getElementById("staffRosterTbody");
+      tbody.innerHTML = "";
+      const hasFullAccess = currentUser.role === 'Manager' || currentUser.role === 'Admin';
+
+      staffRoster.forEach((staff, index) => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 font-bold font-mono text-indigo-600">${staff.id}</td>
+            <td class="p-4">
+              <div class="font-bold text-slate-800 text-sm">${staff.name}</div>
+              <div class="text-[11px] text-slate-400">${staff.email}</div>
+            </td>
+            <td class="p-4"><span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${staff.role === 'Admin' ? 'bg-indigo-100 text-indigo-800' : (staff.role === 'Manager' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700')}">${staff.role}</span></td>
+            <td class="p-4 text-slate-600 font-semibold">${staff.dept}</td>
+            <td class="p-4"><span class="text-emerald-600 font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-xs"></i> ${staff.bioSync}</span></td>
+            <td class="p-4 text-right">
+              ${hasFullAccess ? `
+                <div class="flex items-center justify-end gap-2">
+                  <button onclick="openEditModal(${index})" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  <button onclick="removeEmployee(${index})" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold text-xs"><i class="fa-solid fa-trash-can"></i> Remove</button>
+                </div>
+              ` : `<span class="text-slate-400 text-[11px] italic">Read-Only</span>`}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function openEditModal(index) {
+      const emp = staffRoster[index];
+      document.getElementById("editEmpIndex").value = index;
+      document.getElementById("editEmpId").value = emp.id;
+      document.getElementById("editEmpName").value = emp.name;
+      document.getElementById("editEmpRole").value = emp.role;
+      document.getElementById("editEmpDept").value = emp.dept;
+      document.getElementById("editEmpEmail").value = emp.email;
+      document.getElementById("editEmpPhone").value = emp.phone;
+      document.getElementById("managerEditModal").classList.remove("hidden");
+    }
+
+    function closeEditModal() {
+      document.getElementById("managerEditModal").classList.add("hidden");
+    }
+
+    function saveEmployeeEdit(e) {
+      e.preventDefault();
+      const idx = document.getElementById("editEmpIndex").value;
+      staffRoster[idx].name = document.getElementById("editEmpName").value;
+      staffRoster[idx].role = document.getElementById("editEmpRole").value;
+      staffRoster[idx].dept = document.getElementById("editEmpDept").value;
+      staffRoster[idx].email = document.getElementById("editEmpEmail").value;
+      staffRoster[idx].phone = document.getElementById("editEmpPhone").value;
+
+      saveState();
+      closeEditModal();
+      renderStaffRoster();
+      alert(`Employee details updated by ${currentUser.role}.`);
+    }
+
+    function removeEmployee(index) {
+      if (confirm(`Remove ${staffRoster[index].name} (${staffRoster[index].id}) from records?`)) {
+        staffRoster.splice(index, 1);
+        saveState();
+        renderStaffRoster();
+        alert("Employee removed successfully.");
+      }
+    }
+
+    function renderDualApprovals() {
+      const tbody = document.getElementById("dualApprovalTableBody");
+      tbody.innerHTML = "";
+
+      approvalTickets.forEach((t, i) => {
+        let mgrBadge = t.managerStatus === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+        let admBadge = t.adminStatus === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+
+        let canManagerSign = currentUser.role === 'Manager' && t.managerStatus === 'Pending';
+        let canAdminSign = currentUser.role === 'Admin' && t.adminStatus === 'Pending';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3.5 font-mono font-bold text-slate-700">${t.id}</td>
+            <td class="p-3.5 font-bold text-slate-800">${t.staffName} <span class="text-[10px] text-slate-400 font-mono block">${t.staffId}</span></td>
+            <td class="p-3.5 font-semibold text-slate-600">${t.type}</td>
+            <td class="p-3.5 text-slate-700 font-medium">${t.detail}</td>
+            <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${mgrBadge}">Manager: ${t.managerStatus}</span></td>
+            <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${admBadge}">Admin: ${t.adminStatus}</span></td>
+            <td class="p-3.5 text-right">
+              ${canManagerSign ? `<button onclick="signDualApproval(${i}, 'manager')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold">Manager Sign</button>` : ''}
+              ${canAdminSign ? `<button onclick="signDualApproval(${i}, 'admin')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold">Admin Sign</button>` : ''}
+              ${!canManagerSign && !canAdminSign ? `<span class="text-[11px] font-bold ${t.managerStatus === 'Approved' && t.adminStatus === 'Approved' ? 'text-emerald-600' : 'text-slate-400'}">${t.managerStatus === 'Approved' && t.adminStatus === 'Approved' ? '<i class=\"fa-solid fa-check-double\"></i> Fully Approved' : 'Awaiting Next Sign-off'}</span>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+      document.getElementById("approvalBadgeCount").innerText = approvalTickets.filter(x => x.managerStatus === 'Pending' || x.adminStatus === 'Pending').length;
+    }
+
+    function signDualApproval(index, signer) {
+      if (signer === 'manager') approvalTickets[index].managerStatus = 'Approved';
+      if (signer === 'admin') approvalTickets[index].adminStatus = 'Approved';
+
+      if (approvalTickets[index].managerStatus === 'Approved' && approvalTickets[index].adminStatus === 'Approved') {
+        approvalTickets[index].finalStatus = "Approved";
+        alert(`Ticket ${approvalTickets[index].id} has received DUAL APPROVAL (Manager + Admin)!`);
+      } else {
+        alert(`Signed by ${signer.toUpperCase()}. Awaiting companion approval.`);
+      }
+      saveState();
+      renderDualApprovals();
+    }
+
+    function submitLeaveRequest(e) {
+      e.preventDefault();
+      const type = document.getElementById("leaveType").value;
+      const from = document.getElementById("leaveFrom").value;
+      const to = document.getElementById("leaveTo").value;
+      approvalTickets.unshift({
+        id: `TKT-${Math.floor(800 + Math.random() * 200)}`,
+        staffName: currentUser.name,
+        staffId: currentUser.id,
+        type: `Leave (${type})`,
+        detail: `${from} to ${to}`,
+        managerStatus: "Pending",
+        adminStatus: "Pending",
+        finalStatus: "Pending Both"
+      });
+      saveState();
+      renderDualApprovals();
+      alert("Leave Request Submitted! Dual approval initiated.");
+      e.target.reset();
+      switchTab('approvals');
+    }
+
+    function submitDetailsChangeRequest(e) {
+      e.preventDefault();
+      const field = document.getElementById("reqChangeField").value;
+      const val = document.getElementById("reqChangeValue").value;
+      approvalTickets.unshift({
+        id: `TKT-${Math.floor(800 + Math.random() * 200)}`,
+        staffName: currentUser.name,
+        staffId: currentUser.id,
+        type: "Change My Details",
+        detail: `${field} -> ${val}`,
+        managerStatus: "Pending",
+        adminStatus: "Pending",
+        finalStatus: "Pending Both"
+      });
+      saveState();
+      renderDualApprovals();
+      alert("Detail change ticket sent to Manager for dual-body verification.");
+      e.target.reset();
+      switchTab('approvals');
+    }
+
+    function submitGrievanceOrPunch(e) {
+      e.preventDefault();
+      const t = document.getElementById("ticketType").value;
+      const d = document.getElementById("ticketDetails").value;
+      approvalTickets.unshift({
+        id: `TKT-${Math.floor(800 + Math.random() * 200)}`,
+        staffName: currentUser.name,
+        staffId: currentUser.id,
+        type: t,
+        detail: d,
+        managerStatus: "Pending",
+        adminStatus: "Pending",
+        finalStatus: "Pending Both"
+      });
+      saveState();
+      renderDualApprovals();
+      alert("Ticket submitted successfully.");
+      e.target.reset();
+      switchTab('approvals');
+    }
+
+    function handleManagerProfileUpdate(e) {
+      e.preventDefault();
+      if (currentUser.role === 'Employee') {
+        alert("Action restricted: Employees cannot edit details directly.");
+        return;
+      }
+      currentUser.name = document.getElementById("profName").value;
+      currentUser.email = document.getElementById("profEmail").value;
+      currentUser.phone = document.getElementById("profPhone").value;
+      currentUser.dept = document.getElementById("profDept").value;
+      enforceRolePermissions();
+      alert(`${currentUser.role} profile details updated!`);
+    }
+
+    function handlePasswordChange(e) {
+      e.preventDefault();
+      const p1 = document.getElementById("p1").value;
+      const p2 = document.getElementById("p2").value;
+      if (p1 !== p2) return alert("Passwords do not match!");
+      alert("Password updated successfully.");
+      e.target.reset();
+    }
+
+    function exportDataToCSV(type) {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      let filename = "export.csv";
+
+      if (type === 'roster') {
+        csvContent += "Employee ID,Name,Role,Department,Email,Phone,Biometric Status\n";
+        staffRoster.forEach(s => {
+          csvContent += `"${s.id}","${s.name}","${s.role}","${s.dept}","${s.email}","${s.phone}","${s.bioSync}"\n`;
+        });
+        filename = "WorkPulse_Manpower_Roster.csv";
+      } else {
+        csvContent += "Date,Day,Status,Shift In,Shift Out\n";
+        for (let i = 1; i <= 30; i++) {
+          let st = [6, 13, 20, 27].includes(i) ? "Weekend Off" : "Present";
+          csvContent += `2026-09-${i < 10 ? '0' + i : i},Day ${i},${st},09:15 AM,06:30 PM\n`;
+        }
+        filename = "Attendance_Log_September_2026.csv";
+      }
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function sendQuickWhatsApp(msg) {
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      currentUser.role = document.getElementById("loginRole").value;
+      currentUser.id = document.getElementById("loginId").value || "EMP-1002";
+
+      if (currentUser.role === 'Manager') {
+        currentUser.name = "Ananya Roy";
+        currentUser.dept = "Engineering";
+      } else if (currentUser.role === 'Admin') {
+        currentUser.name = "Suresh Mehra";
+        currentUser.dept = "Operations";
+      } else {
+        currentUser.name = "Vikram Seth";
+        currentUser.dept = "Logistics";
+      }
+
+      document.getElementById("loginScreen").classList.add("hidden");
+      enforceRolePermissions();
+    }
+
+    function openLogin() {
+      document.getElementById("loginScreen").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
