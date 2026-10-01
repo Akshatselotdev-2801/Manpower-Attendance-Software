@@ -1,0 +1,43 @@
+<!-- OFFICIAL ADMIN SECURE LOGIN SCREEN -->
+<div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-100">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-white text-2xl mb-3 shadow-lg shadow-indigo-200">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2 class="text-2xl font-black text-slate-900">WorkPulse Administration</h2>
+      <p class="text-xs text-slate-500 mt-1">Official Master Portal & System Terminal</p>
+    </div>
+
+    <form onsubmit="handleOfficialAdminLogin(event)" class="space-y-4">
+      <div id="loginErrorMsg" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-600 text-center"></div>
+
+      <div>
+        <label class="text-xs font-bold text-slate-600 block mb-1">Official Admin Email / ID</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+            <i class="fa-solid fa-user-shield text-xs"></i>
+          </span>
+          <input type="text" id="adminLoginIdentifier" required placeholder="admin@company.com or EMP-1001" 
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs font-bold text-slate-600 block mb-1">Password</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+            <i class="fa-solid fa-lock text-xs"></i>
+          </span>
+          <input type="password" id="adminLoginPassword" required placeholder="Enter administrative password" 
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <button type="submit" id="adminLoginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-200 transition text-sm flex items-center justify-center space-x-2">
+        <span>Authenticate & Access Console</span>
+        <i class="fa-solid fa-arrow-right text-xs"></i>
+      </button>
+    </form>
+  </div>
+</div>
